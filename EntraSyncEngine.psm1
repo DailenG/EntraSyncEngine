@@ -74,8 +74,8 @@ function Invoke-CloudAudit {
     }
 
     try {
-        # Ensures graph interactions remain scoped to Work/School accounts ONLY
-        Connect-MgGraph -Scopes "User.Read.All" -TenantId "organizations"
+        # Ensures graph interactions remain scoped to Work/School accounts ONLY and suppresses the welcome string
+        Connect-MgGraph -Scopes "User.Read.All" -TenantId "organizations" -NoWelcome
         
         $DateStr = Get-Date -Format "yyyyMMdd"
         $ExportPath = Join-Path $EntraConfig.RootDir "EntraUsers_$DateStr.csv"
