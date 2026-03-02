@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.0.1'
+    ModuleVersion        = '1.0.0'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -24,13 +24,25 @@
     Author               = 'Dailen Gunter'
 
     # Company or vendor of this module
-    CompanyName          = ''
+    CompanyName          = 'WideData Corporation, Inc.'
 
     # Copyright statement for this module
-    Copyright            = '(c) 2026 Dailen Gunter. All rights reserved.'
+    Copyright            = '(c) 2026 WideData Corporation, Inc.'
 
     # Description of the functionality provided by this module
-    Description          = 'A modular, enterprise-grade PowerShell framework designed to facilitate seamless, safe on-premise Active Directory to Microsoft Entra ID migrations.'
+    Description          = @'
+The EntraSyncEngine Framework.
+A professional identity alignment and management module for Hybrid AD environments.
+
+Developed for MSP-scale identity migrations.
+Includes:
+- Microsoft Graph Lean Integration
+- AD Attribute Alignment (UPN, Mail, ProxyAddresses)
+- Programmatic XML Backups & CSV Manifests
+- Extensible Plugin Architecture for SSO/Writeback/Monitoring
+
+Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
+'@
 
     # Minimum version of the PowerShell engine required by this module
     PowerShellVersion    = '7.0'
@@ -51,7 +63,7 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    # RequiredModules = @()
+    RequiredModules      = @('Microsoft.Graph.Authentication', 'Microsoft.Graph.Users')
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
@@ -95,19 +107,19 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            # Tags = @()
+            Tags         = @('ActiveDirectory', 'Entra', 'Migration', 'Sync', 'Azure', 'Graph', 'MSP', 'WideData')
 
             # A URL to the license for this module.
-            # LicenseUri = ''
+            LicenseUri   = 'https://github.com/DailenG/EntraSyncEngine/blob/master/LICENSE'
 
             # A URL to the main website for this project.
-            # ProjectUri = ''
+            ProjectUri   = 'https://github.com/DailenG/EntraSyncEngine'
 
             # A URL to an icon representing this module.
-            # IconUri = ''
+            IconUri      = 'https://wdc.help/icons/wam.png'
 
             # ReleaseNotes of this module
-            # ReleaseNotes = ''
+            ReleaseNotes = 'v1.0.0 - Initial public release of the EntraSyncEngine framework. Interactive documentation available at https://deepwiki.com/DailenG/EntraSyncEngine'
 
             # Prerelease string of this module
             # Prerelease = ''
