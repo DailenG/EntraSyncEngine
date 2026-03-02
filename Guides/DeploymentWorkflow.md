@@ -9,8 +9,12 @@ This tool is designed to be used structurally across three distinct phases in or
 
 1. **Cloud Audit (Option 1):** Execute the Graph Audit first. This will authenticate via your tenant (ensuring the `organizations` scope) to pull an export of all the active, licensed cloud accounts you want to match.
 2. **AD Attribute Alignment (Option 2):** Use the CSV generated from the Cloud Audit to surgically alter your on-premise `UserPrincipalName`, `mail`, and `proxyAddresses`.
-    - *Why?* Microsoft Entra Connect performs a "Soft-Match" based on these explicit properties. If they align perfectly, your on-premise identity claims the Entra ID mailbox rather than provisioning a duplicate `*.onmicrosoft.com` account. 
     - *Safety:* This phase creates a full XML backup of AD prior to execution and logs every transaction in the manifest so you can safely use **Option 4: Rollback**.
+
+### Edge Case: Retained Mailboxes (Disabled AD Accounts)
+> **WARNING:** If you have active cloud mailboxes belonging to disabled AD accounts (e.g., terminated employees whose mailboxes are being retained), **Microsoft Entra Connect Sync will disable their cloud accounts** when it bridges the `accountEnabled` states, effectively breaking mailbox access.
+>
+> The Engine's Pre-Flight check actively hunts for these matches. If it finds active cloud accounts mapping to disabled AD accounts, it will halt and prompt you to literally type `ACKNOWLEDGE` before proceeding. If this happens, you MUST either exclude those specific disabled AD accounts from your sync scope within the Entra Connect wizard, or leave them unmatched!
 
 ## Phase 2: Install Microsoft Entra Connect
 **Run the official Microsoft Entra Connect wizard.**

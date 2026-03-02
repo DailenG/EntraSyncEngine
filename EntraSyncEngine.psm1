@@ -147,49 +147,73 @@ function Invoke-ADAlignment {
     
     # Pre-flight Simulation
     Write-EntraLog "[*] Simulating AD matches against cloud export..." "Cyan"
-    $MatchedUsers = @()
+    $ActiveMatches = @()
+    $DisabledMatches = @()
     $Misses = @()
 
     foreach ($Line in $Data) {
         $UPN = $Line.UserPrincipalName
         $Prefix = $UPN.Split("@")[0]
         
-        # Advanced Match (MSP Logic) - Restricted to Enabled users within TargetOU
-        $Target = Get-ADUser -Filter { (Enabled -eq $true) -and (SamAccountName -eq $Prefix -or mail -eq $UPN -or proxyAddresses -like "*$UPN*") } -SearchBase $TargetOU.DistinguishedName -Properties proxyAddresses, mail -ErrorAction SilentlyContinue
+        # Advanced Match (MSP Logic) - Search for both enabled and disabled accounts
+        $Target = Get-ADUser -Filter { SamAccountName -eq $Prefix -or mail -eq $UPN -or proxyAddresses -like "*$UPN*" } -SearchBase $TargetOU.DistinguishedName -Properties proxyAddresses, mail, Enabled -ErrorAction SilentlyContinue
         
         if ($null -ne $Target) {
-            $MatchedUsers += [PSCustomObject]@{ CloudUser = $UPN; ADUser = $Target }
+            $MatchObj = [PSCustomObject]@{ CloudUser = $UPN; ADUser = $Target }
+            if ($Target.Enabled) {
+                $ActiveMatches += $MatchObj
+            }
+            else {
+                $DisabledMatches += $MatchObj
+            }
         }
         else {
             $Misses += $UPN
         }
     }
 
+    $TotalMatches = $ActiveMatches.Count + $DisabledMatches.Count
+
     Write-EntraLog "`n--- PRE-FLIGHT SUMMARY ---" "White"
     Write-EntraLog "Active Cloud Accounts Evaluated: $($Data.Count)" "White"
-    Write-EntraLog "Active AD Matches Found:         $($MatchedUsers.Count)" "Green"
-    Write-EntraLog "Missing / Disabled / Unmatched:  $($Misses.Count)" "Yellow"
+    Write-EntraLog "Active AD Matches Found:         $($ActiveMatches.Count)" "Green"
+    Write-EntraLog "Disabled AD Matches Found:       $($DisabledMatches.Count)" "DarkYellow"
+    Write-EntraLog "Missing / Unmatched:             $($Misses.Count)" "Yellow"
     Write-EntraLog "--------------------------`n" "White"
 
     if ($Misses.Count -gt 0) {
-        Write-EntraLog "[!] WARNING: $($Misses.Count) Cloud Accounts could not be matched to an active AD account." "Red"
+        Write-EntraLog "[!] WARNING: $($Misses.Count) Cloud Accounts could not be matched to ANY AD account." "Red"
         Write-EntraLog "    If you proceed with installing Entra Connect Sync while these accounts are unmatched," "Yellow"
         Write-EntraLog "    Entra Connect will assume they are deleted on-premise and may DISABLE them in the cloud." "Yellow"
         Write-EntraLog "    Please review the missing accounts manually before syncing.`n" "White"
     }
 
-    if ($MatchedUsers.Count -eq 0) {
-        Write-EntraLog "[-] No active AD matches found in the selected OU. Aborting." "Red"
+    if ($DisabledMatches.Count -gt 0) {
+        Write-EntraLog "[!] CRITICAL WARNING: $($DisabledMatches.Count) Active Cloud Accounts matched CLOSED/DISABLED AD Accounts." "Red"
+        Write-EntraLog "    When Entra Connect Sync runs, it bridges 'accountEnabled' states." "Red"
+        Write-EntraLog "    Because the AD account is disabled, Entra Connect WILL INSTANTLY DISABLE the cloud mailbox." "Red"
+        Write-EntraLog "    If these are retained mailboxes (e.g., terminated employees), you must exclude them from the sync scope OR leave them unmatched.`n" "White"
+        
+        $Ack = Read-Host "Type 'ACKNOWLEDGE' to proceed and prepare to synchronize active cloud accounts to DISABLED AD accounts"
+        if ($Ack -cne 'ACKNOWLEDGE') {
+            Write-EntraLog "[-] User aborted AD modifications due to Retained Mailbox risk." "Yellow"
+            Pause; return
+        }
+    }
+
+    if ($TotalMatches -eq 0) {
+        Write-EntraLog "[-] No AD matches found in the selected OU. Aborting." "Red"
         Pause; return
     }
 
-    $Confirm = Read-Host "Type 'YES' to proceed with modifying $($MatchedUsers.Count) AD accounts"
+    $Confirm = Read-Host "Type 'YES' to proceed with modifying $($TotalMatches) AD accounts"
     if ($Confirm -cne 'YES') {
         Write-EntraLog "[-] User aborted AD modifications." "Yellow"
         Pause; return
     }
 
-    foreach ($Item in $MatchedUsers) {
+    $AllMatches = $ActiveMatches + $DisabledMatches
+    foreach ($Item in $AllMatches) {
         $UPN = $Item.CloudUser
         $Target = $Item.ADUser
 
