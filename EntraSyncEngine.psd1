@@ -9,31 +9,31 @@
 @{
 
     # Script module or binary module file associated with this manifest.
-    RootModule        = 'EntraSyncEngine.psm1'
+    RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.0.1'
+    ModuleVersion        = '0.0.1'
 
     # Supported PSEditions
-    # CompatiblePSEditions = @()
+    CompatiblePSEditions = @('Core')
 
     # ID used to uniquely identify this module
-    GUID              = 'a6c43b77-d338-4142-a647-4ec9530705b8'
+    GUID                 = 'a6c43b77-d338-4142-a647-4ec9530705b8'
 
     # Author of this module
-    Author            = 'Dailen Gunter'
+    Author               = 'Dailen Gunter'
 
     # Company or vendor of this module
-    CompanyName       = ''
+    CompanyName          = ''
 
     # Copyright statement for this module
-    Copyright         = '(c) 2026 Dailen Gunter. All rights reserved.'
+    Copyright            = '(c) 2026 Dailen Gunter. All rights reserved.'
 
     # Description of the functionality provided by this module
-    Description       = 'A modular, enterprise-grade PowerShell framework designed to facilitate seamless, safe on-premise Active Directory to Microsoft Entra ID migrations.'
+    Description          = 'A modular, enterprise-grade PowerShell framework designed to facilitate seamless, safe on-premise Active Directory to Microsoft Entra ID migrations.'
 
     # Minimum version of the PowerShell engine required by this module
-    # PowerShellVersion = ''
+    PowerShellVersion    = '7.0'
 
     # Name of the PowerShell host required by this module
     # PowerShellHostName = ''
@@ -69,16 +69,16 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = 'Start-EntraSyncConsole'
+    FunctionsToExport    = 'Start-EntraSyncConsole'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-    CmdletsToExport   = '*'
+    CmdletsToExport      = '*'
 
     # Variables to export from this module
-    VariablesToExport = '*'
+    VariablesToExport    = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = '*'
+    AliasesToExport      = '*'
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
@@ -90,7 +90,7 @@
     # FileList = @()
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-    PrivateData       = @{
+    PrivateData          = @{
 
         PSData = @{
 

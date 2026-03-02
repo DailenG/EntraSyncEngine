@@ -274,6 +274,14 @@ function Invoke-DeploymentGuide {
 
 # --- Main Console Entry Point ---
 function Start-EntraSyncConsole {
+    if ($PSVersionTable.PSVersion.Major -lt 7) {
+        Write-Host "[!] INCOMPATIBLE RUNTIME" -ForegroundColor Red
+        Write-Host "EntraSyncEngine requires PowerShell 7+ for ConsoleGuiTools compatibility." -ForegroundColor Yellow
+        Write-Host "You are currently running PowerShell version $($PSVersionTable.PSVersion.ToString())." -ForegroundColor Yellow
+        Write-Host "Please install PowerShell 7 (pwsh) and relaunch." -ForegroundColor White
+        Pause; return
+    }
+
     Initialize-EntraFramework
     do {
         Write-EntraHeader "MAIN CONSOLE"
