@@ -139,14 +139,15 @@ function Invoke-ADAlignment {
             $Proxies = $Target.proxyAddresses | Where-Object { $_ -notlike "*$UPN*" }
             $Proxies += "SMTP:$UPN"
             
-            Set-ADUser -Identity $Target.DistinguishedName -UserPrincipalName $UPN -EmailAddress $UPN -Replace @{mail = $UPN; proxyAddresses = $Proxies }
+            Set-ADUser -Identity $Target.DistinguishedName -UserPrincipalName $UPN -EmailAddress $UPN -Replace @{mail = $UPN; proxyAddresses = $Proxies } -ErrorAction Stop
             $Log | Export-Csv $EntraConfig.Manifest -Append -NoTypeInformation
             Write-EntraLog "[+] Aligned: $($Target.SamAccountName)" "Green"
         }
         catch {
-            Write-EntraLog "[!] Failed: $($Target.SamAccountName)" "Red"
+            Write-EntraLog "[!] Failed to align $($Target.SamAccountName). Error: $($_.Exception.Message)" "Red"
         }
     }
+    Write-EntraLog "[*] AD Alignment phase complete." "Cyan"
     Pause
 }
 
@@ -171,18 +172,29 @@ function Invoke-ExtensionMenu {
 # --- Framework Feature: Rollback ---
 function Invoke-Rollback {
     Write-EntraHeader "ROLLBACK ENGINE"
-    if (-not (Test-Path $EntraConfig.Manifest)) { Write-Host "No manifest."; Pause; return }
+    if (-not (Test-Path $EntraConfig.Manifest)) { Write-EntraLog "No manifest found at $($EntraConfig.Manifest)." "Yellow"; Pause; return }
     
     $History = Import-Csv $EntraConfig.Manifest
     $User = Read-Host "SamAccountName to revert (or ALL)"
     $Queue = if ($User -eq 'ALL') { $History } else { $History | Where-Object { $_.User -eq $User } }
 
-    foreach ($Item in $Queue) {
-        Write-Host "[*] Reverting $($Item.User)..." -NoNewline
-        $OldP = $Item.OldProxies -split ";"
-        Set-ADUser -Identity $Item.DN -UserPrincipalName $Item.OldUPN -EmailAddress $Item.OldUPN -Replace @{mail = $Item.OldUPN; proxyAddresses = $OldP }
-        Write-Host " [OK]" -ForegroundColor Green
+    if (-not $Queue) {
+        Write-EntraLog "[-] No rollback operations found in queue." "Yellow"
+        Pause; return
     }
+
+    foreach ($Item in $Queue) {
+        Write-EntraLog "[*] Reverting $($Item.User)..." "Cyan"
+        try {
+            $OldP = $Item.OldProxies -split ";"
+            Set-ADUser -Identity $Item.DN -UserPrincipalName $Item.OldUPN -EmailAddress $Item.OldUPN -Replace @{mail = $Item.OldUPN; proxyAddresses = $OldP } -ErrorAction Stop
+            Write-EntraLog " [+] Successfully reverted $($Item.User)" "Green"
+        }
+        catch {
+            Write-EntraLog " [!] Failed to revert $($Item.User): $($_.Exception.Message)" "Red"
+        }
+    }
+    Write-EntraLog "[*] Rollback phase complete." "Cyan"
     Pause
 }
 
