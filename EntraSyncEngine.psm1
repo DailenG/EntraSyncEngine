@@ -209,13 +209,30 @@ function Invoke-ADAlignment {
         Pause; return
     }
 
-    $Confirm = Read-Host "Type 'YES' to proceed with modifying $($TotalMatches) AD accounts"
-    if ($Confirm -cne 'YES') {
-        Write-EntraLog "[-] User aborted AD modifications." "Yellow"
-        Pause; return
-    }
-
     $AllMatches = $ActiveMatches + $DisabledMatches
+    
+    while ($true) {
+        Write-EntraLog "[?] Ready to align $($TotalMatches) AD accounts." "Cyan"
+        $Confirm = Read-Host "    (Type 'YES' to modify AD, 'REVIEW' or press Enter to view pending changes)"
+        
+        if ($Confirm -match '(?i)^REVIEW$' -or [string]::IsNullOrWhiteSpace($Confirm)) {
+            Write-EntraLog "    [*] Launching GridView..." "Cyan"
+            $AllMatches | 
+            Select-Object @{N = "Action"; E = { "Align Properties" } },
+            @{N = "Cloud_UPN"; E = { $_.CloudUser } }, 
+            @{N = "AD_SamAccountName"; E = { $_.ADUser.SamAccountName } }, 
+            @{N = "AD_Enabled"; E = { $_.ADUser.Enabled } },
+            @{N = "AD_OldUPN"; E = { $_.ADUser.UserPrincipalName } } | 
+            Out-ConsoleGridView -Title "REVIEW PENDING AD ALIGNMENTS ($TotalMatches Accounts)"
+        }
+        elseif ($Confirm -cne 'YES') {
+            Write-EntraLog "[-] User aborted AD modifications." "Yellow"
+            Pause; return
+        }
+        else {
+            break
+        }
+    }
     foreach ($Item in $AllMatches) {
         $UPN = $Item.CloudUser
         $Target = $Item.ADUser
