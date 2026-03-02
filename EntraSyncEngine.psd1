@@ -24,10 +24,10 @@
     Author               = 'Dailen Gunter'
 
     # Company or vendor of this module
-    CompanyName          = 'WideData Corporation, Inc.'
+    CompanyName          = ''
 
     # Copyright statement for this module
-    Copyright            = '(c) 2026 WideData Corporation, Inc.'
+    Copyright            = '(c) 2026 Dailen Gunter. All rights reserved.'
 
     # Description of the functionality provided by this module
     Description          = @'
@@ -107,7 +107,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags         = @('ActiveDirectory', 'Entra', 'Migration', 'Sync', 'Azure', 'Graph', 'MSP', 'WideData')
+            Tags         = @('ActiveDirectory', 'Entra', 'Migration', 'Sync', 'Azure', 'Graph', 'MSP', 'Dailen')
 
             # A URL to the license for this module.
             LicenseUri   = 'https://github.com/DailenG/EntraSyncEngine/blob/master/LICENSE'
@@ -116,7 +116,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             ProjectUri   = 'https://github.com/DailenG/EntraSyncEngine'
 
             # A URL to an icon representing this module.
-            IconUri      = 'https://wdc.help/icons/wam.png'
+            # IconUri = ''
 
             # ReleaseNotes of this module
             ReleaseNotes = 'v1.0.0 - Initial public release of the EntraSyncEngine framework. Interactive documentation available at https://deepwiki.com/DailenG/EntraSyncEngine'

@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://wdc.help/icons/wam.png" width="128" height="128" alt="WideData Logo">
+  <img src="https://wdc.help/icons/wam.png" width="128" height="128" alt="WAM Logo">
   <h1>Entra Sync Engine</h1>
   <p><b>A professional identity alignment and management module for Hybrid AD environments.</b></p>
   <a href="https://deepwiki.com/DailenG/EntraSyncEngine"><strong>📚 Read the Interactive DeepWiki Documentation</strong></a>
@@ -40,4 +40,4 @@ Start-EntraSyncConsole
 - Microsoft Graph PowerShell SDK (Automatically installed by the framework if missing).
 
 ## Copyright
-(c) 2026 WideData Corporation, Inc. All rights reserved.
+(c) 2026 Dailen Gunter. All rights reserved.
