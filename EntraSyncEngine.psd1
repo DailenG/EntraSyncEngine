@@ -63,7 +63,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @('Microsoft.Graph.Authentication', 'Microsoft.Graph.Users')
+    # RequiredModules      = @('Microsoft.Graph.Authentication', 'Microsoft.Graph.Users')
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
