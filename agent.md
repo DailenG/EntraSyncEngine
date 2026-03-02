@@ -19,6 +19,7 @@ The EntraSyncEngine is a modular, enterprise-grade PowerShell framework designed
 - Ensure zero-impact alignment by retaining granular validation parameters.
 - Provide a robust mechanism for reporting unaligned or disjointed identities.
 - Grow the plugin ecosystem to support other Microsoft 365 migration tasks (e.g., Azure AD Connect health checks, SSO).
+- Implement a scalable exclusion list (e.g., filtering against specific `AssignedPlans` SKUs) during the Cloud Audit to safely bypass active, licensed "resource-style" accounts (like Reception phones or meeting rooms).
 
 ## Standard Deployment Workflow
 1. **Phase 1: Pre-Sync Alignment** (Tools 1 & 2): Download tenant data via Graph and soft-match UPNs and proxy addresses locally.

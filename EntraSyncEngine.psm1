@@ -81,7 +81,8 @@ function Invoke-CloudAudit {
         $ExportPath = Join-Path $EntraConfig.RootDir "EntraUsers_$DateStr.csv"
         
         Write-EntraLog "[*] Querying Graph for Active/Licensed users..." "Cyan"
-        $Users = Get-MgUser -All -Property DisplayName, UserPrincipalName, AccountEnabled, ProxyAddresses, AssignedPlans | 
+        # Explicit PageSize and ConsistencyLevel prevents the Graph SDK from arbitrarily truncating complex property queries
+        $Users = Get-MgUser -All -PageSize 500 -ConsistencyLevel eventual -Property DisplayName, UserPrincipalName, AccountEnabled, ProxyAddresses, AssignedPlans | 
         Where-Object { $_.AccountEnabled -eq $true -and $_.AssignedPlans.Count -gt 0 }
         
         $Users | Select-Object DisplayName, UserPrincipalName, @{Name = "ProxyAddresses"; Expression = { $_.ProxyAddresses -join ";" } } | 
