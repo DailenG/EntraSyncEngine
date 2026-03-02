@@ -171,6 +171,13 @@ function Invoke-ADAlignment {
     Write-EntraLog "Missing / Disabled / Unmatched:  $($Misses.Count)" "Yellow"
     Write-EntraLog "--------------------------`n" "White"
 
+    if ($Misses.Count -gt 0) {
+        Write-EntraLog "[!] WARNING: $($Misses.Count) Cloud Accounts could not be matched to an active AD account." "Red"
+        Write-EntraLog "    If you proceed with installing Entra Connect Sync while these accounts are unmatched," "Yellow"
+        Write-EntraLog "    Entra Connect will assume they are deleted on-premise and may DISABLE them in the cloud." "Yellow"
+        Write-EntraLog "    Please review the missing accounts manually before syncing.`n" "White"
+    }
+
     if ($MatchedUsers.Count -eq 0) {
         Write-EntraLog "[-] No active AD matches found in the selected OU. Aborting." "Red"
         Pause; return
