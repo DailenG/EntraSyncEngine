@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.0.2'
+    ModuleVersion        = '1.0.3'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.0.2 - Hotfix: Removed strict RequiredModules definitions for Graph to prevent Update-Module lock states.'
+            ReleaseNotes = 'v1.0.3 - Fixed an issue where executing `Remove-Module EntraSyncEngine` erroneously unloaded the Microsoft Graph SDK modules from the session by injecting `-Global` into the module`s internal import statements.'
 
             # Prerelease string of this module
             # Prerelease = ''

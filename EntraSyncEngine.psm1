@@ -70,7 +70,8 @@ function Invoke-CloudAudit {
             Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
             Install-Module $M -Scope CurrentUser -AllowClobber -Force
         }
-        Import-Module $M
+        # -Global prevents the imported module from being tracked as a child of EntraSyncEngine
+        Import-Module $M -Global
     }
 
     try {
