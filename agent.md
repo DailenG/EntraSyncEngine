@@ -19,3 +19,8 @@ The EntraSyncEngine is a modular, enterprise-grade PowerShell framework designed
 - Ensure zero-impact alignment by retaining granular validation parameters.
 - Provide a robust mechanism for reporting unaligned or disjointed identities.
 - Grow the plugin ecosystem to support other Microsoft 365 migration tasks (e.g., Azure AD Connect health checks, SSO).
+
+## Standard Deployment Workflow
+1. **Phase 1: Pre-Sync Alignment** (Tools 1 & 2): Download tenant data via Graph and soft-match UPNs and proxy addresses locally.
+2. **Phase 2: AD Connect Installation**: Run Microsoft Entra Connect Setup. Hand off identities to the sync engine.
+3. **Phase 3: Post-Sync Architecture** (Tool 5): Verify and assert explicit capabilities using extensions (e.g. SSO state validation, MSOL_ Writeback AD delegations).

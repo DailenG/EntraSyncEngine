@@ -198,11 +198,25 @@ function Invoke-Rollback {
     Pause
 }
 
+# --- Framework Feature: Documentation ---
+function Invoke-DeploymentGuide {
+    Write-EntraHeader "DEPLOYMENT WORKFLOW GUIDE"
+    $GuidePath = Join-Path $PSScriptRoot "Guides\DeploymentWorkflow.md"
+    if (Test-Path $GuidePath) {
+        Get-Content $GuidePath | Out-Host
+    }
+    else {
+        Write-EntraLog "[-] Guide not found at $GuidePath. Please ensure the Guides directory exists." "Red"
+    }
+    Pause
+}
+
 # --- Main Console Entry Point ---
 function Start-EntraSyncConsole {
     Initialize-EntraFramework
     do {
         Write-EntraHeader "MAIN CONSOLE"
+        Write-Host "0.) [GUIDE]  Read Deployment Workflow"
         Write-Host "1.) [CLOUD]  Run Graph Audit"
         Write-Host "2.) [LOCAL]  Align AD Attributes"
         Write-Host "3.) [VIEW]   Examine History"
@@ -212,6 +226,7 @@ function Start-EntraSyncConsole {
         
         $Choice = Read-Host "`nSelection"
         switch ($Choice) {
+            '0' { Invoke-DeploymentGuide }
             '1' { Invoke-CloudAudit }
             '2' { Invoke-ADAlignment }
             '3' { if (Test-Path $EntraConfig.Manifest) { Import-Csv $EntraConfig.Manifest | Out-GridView -Title "History" } }
