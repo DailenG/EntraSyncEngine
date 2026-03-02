@@ -1,0 +1,212 @@
+<#
+.SYNOPSIS
+    The EntraSyncEngine Framework.
+    A professional identity alignment and management module for Hybrid AD environments.
+    
+.DESCRIPTION
+    Developed for MSP-scale identity migrations.
+    Includes:
+    - Microsoft Graph Lean Integration
+    - AD Attribute Alignment (UPN, Mail, ProxyAddresses)
+    - Programmatic XML Backups & CSV Manifests
+    - Extensible Plugin Architecture for SSO/Writeback/Monitoring
+#>
+
+# --- Framework Configuration ---
+$Global:EntraConfig = @{
+    RootDir        = "C:\Temp\EntraMigration"
+    LogDir         = "C:\Temp\EntraMigration\Logs"
+    BackupDir      = "C:\Temp\EntraMigration\Backups"
+    ExtensionDir   = "C:\Temp\EntraMigration\Extensions"
+    Manifest       = "C:\Temp\EntraMigration\MigrationManifest.csv"
+    RequiredSuffix = "hgor.com"
+}
+
+# --- Initialization ---
+function Initialize-EntraFramework {
+    foreach ($Path in @($EntraConfig.LogDir, $EntraConfig.BackupDir, $EntraConfig.ExtensionDir)) {
+        if (-not (Test-Path $Path)) { New-Item -ItemType Directory -Path $Path -Force | Out-Null }
+    }
+}
+
+# --- Logging Wrapper ---
+function Write-EntraLog {
+    param(
+        [string]$Message,
+        [string]$Color = "White"
+    )
+    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogLine = "[$Timestamp] $Message"
+    Write-Host $Message -ForegroundColor $Color
+    
+    if (Test-Path $Global:EntraConfig.LogDir) {
+        $LogFile = Join-Path $Global:EntraConfig.LogDir "EntraSyncEngine_$(Get-Date -Format 'yyyyMMdd').log"
+        Add-Content -Path $LogFile -Value $LogLine
+    }
+}
+
+# --- UI Framework ---
+function Write-EntraHeader {
+    param([string]$Title)
+    $Timestamp = Get-Date -Format "HH:mm:ss"
+    Clear-Host
+    Write-Host "==========================================================================" -ForegroundColor Cyan
+    Write-Host " ENTRA SYNC ENGINE | $Title | $Timestamp" -ForegroundColor White -BackgroundColor DarkBlue
+    Write-Host "==========================================================================" -ForegroundColor Cyan
+}
+
+# --- Core Feature: Cloud Audit (Microsoft Graph) ---
+function Invoke-CloudAudit {
+    Write-EntraHeader "CLOUD AUDIT"
+    
+    # Surgical Module Check
+    $Req = @("Microsoft.Graph.Authentication", "Microsoft.Graph.Users")
+    foreach ($M in $Req) {
+        if (-not (Get-Module -ListAvailable $M)) {
+            Write-EntraLog "[*] Installing $M..." "Cyan"
+            Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+            Install-Module $M -Scope CurrentUser -AllowClobber -Force
+        }
+        Import-Module $M
+    }
+
+    try {
+        # Ensures graph interactions remain scoped to Work/School accounts ONLY
+        Connect-MgGraph -Scopes "User.Read.All" -TenantId "organizations"
+        
+        $DateStr = Get-Date -Format "yyyyMMdd"
+        $ExportPath = Join-Path $EntraConfig.RootDir "EntraUsers_$DateStr.csv"
+        
+        Write-EntraLog "[*] Querying Graph for Active/Licensed users..." "Cyan"
+        $Users = Get-MgUser -All -Property DisplayName, UserPrincipalName, AccountEnabled, ProxyAddresses, AssignedPlans | 
+        Where-Object { $_.AccountEnabled -eq $true -and $_.AssignedPlans.Count -gt 0 }
+        
+        $Users | Select-Object DisplayName, UserPrincipalName, @{Name = "ProxyAddresses"; Expression = { $_.ProxyAddresses -join ";" } } | 
+        Export-Csv -Path $ExportPath -NoTypeInformation
+            
+        Write-EntraLog "[+] Exported $($Users.Count) users to $ExportPath" "Green"
+    }
+    catch {
+        Write-EntraLog "Graph Operation Failed: $($_.Exception.Message)" "Red"
+    }
+    Pause
+}
+
+# --- Core Feature: AD Alignment ---
+function Invoke-ADAlignment {
+    Write-EntraHeader "AD ATTRIBUTE ALIGNMENT"
+    
+    # Pre-Flight: Suffix Check
+    if ((Get-ADForest).UPNSuffixes -notcontains $EntraConfig.RequiredSuffix) {
+        Write-EntraLog "[!] ERROR: Suffix '$($EntraConfig.RequiredSuffix)' not found in AD Forest." "Red"
+        Pause; return
+    }
+
+    $CSV = Read-Host "Path to Entra CSV"
+    if (-not (Test-Path $CSV)) { Write-EntraLog "Invalid File." "Yellow"; Pause; return }
+
+    # Full State Backup (Safety First)
+    $Bkp = Join-Path $EntraConfig.BackupDir "AD_Bkp_$(Get-Date -Format 'yyyyMMdd_HHmm').xml"
+    Write-EntraLog "[*] Backing up AD State..." "Cyan"
+    Get-ADUser -Filter * -Properties * | Export-Clixml $Bkp
+
+    $Data = Import-Csv $CSV
+    foreach ($Line in $Data) {
+        $UPN = $Line.UserPrincipalName
+        $Prefix = $UPN.Split("@")[0]
+        
+        # Advanced Match (MSP Logic)
+        $Target = Get-ADUser -Filter "SamAccountName -eq '$Prefix' -or mail -eq '$UPN' -or proxyAddresses -like '*$UPN*'" -Properties * -ErrorAction SilentlyContinue
+        
+        if ($null -eq $Target) {
+            Write-EntraLog "[?] No Match for $UPN" "Yellow"
+            $Manual = Read-Host "SamAccountName (or S to skip)"
+            if ($Manual -eq 'S' -or $Manual -eq '') { continue }
+            $Target = Get-ADUser -Identity $Manual -Properties *
+        }
+
+        # Transaction Logging
+        $Log = [PSCustomObject]@{
+            Time       = Get-Date -Format "yyyy-MM-dd HH:mm"
+            User       = $Target.SamAccountName
+            DN         = $Target.DistinguishedName
+            OldUPN     = $Target.UserPrincipalName
+            NewUPN     = $UPN
+            OldProxies = ($Target.proxyAddresses -join ";")
+        }
+
+        try {
+            $Proxies = $Target.proxyAddresses | Where-Object { $_ -notlike "*$UPN*" }
+            $Proxies += "SMTP:$UPN"
+            
+            Set-ADUser -Identity $Target.DistinguishedName -UserPrincipalName $UPN -EmailAddress $UPN -Replace @{mail = $UPN; proxyAddresses = $Proxies }
+            $Log | Export-Csv $EntraConfig.Manifest -Append -NoTypeInformation
+            Write-EntraLog "[+] Aligned: $($Target.SamAccountName)" "Green"
+        }
+        catch {
+            Write-EntraLog "[!] Failed: $($Target.SamAccountName)" "Red"
+        }
+    }
+    Pause
+}
+
+# --- Framework Feature: Extension Loader ---
+function Invoke-ExtensionMenu {
+    $Exts = Get-ChildItem -Path $EntraConfig.ExtensionDir -Filter "*.ps1"
+    if ($Exts.Count -eq 0) { 
+        Write-Host "No extensions found in $($EntraConfig.ExtensionDir)" -ForegroundColor Yellow
+        Pause; return
+    }
+
+    Write-EntraHeader "EXTENSIONS & PLUGINS"
+    for ($i = 0; $i -lt $Exts.Count; $i++) {
+        Write-Host "$($i+1).) $($Exts[$i].BaseName)"
+    }
+    $Choice = Read-Host "`nSelect Extension to Run (or Q)"
+    if ($Choice -match '^\d+$') {
+        & $Exts[[int]$Choice - 1].FullName
+    }
+}
+
+# --- Framework Feature: Rollback ---
+function Invoke-Rollback {
+    Write-EntraHeader "ROLLBACK ENGINE"
+    if (-not (Test-Path $EntraConfig.Manifest)) { Write-Host "No manifest."; Pause; return }
+    
+    $History = Import-Csv $EntraConfig.Manifest
+    $User = Read-Host "SamAccountName to revert (or ALL)"
+    $Queue = if ($User -eq 'ALL') { $History } else { $History | Where-Object { $_.User -eq $User } }
+
+    foreach ($Item in $Queue) {
+        Write-Host "[*] Reverting $($Item.User)..." -NoNewline
+        $OldP = $Item.OldProxies -split ";"
+        Set-ADUser -Identity $Item.DN -UserPrincipalName $Item.OldUPN -EmailAddress $Item.OldUPN -Replace @{mail = $Item.OldUPN; proxyAddresses = $OldP }
+        Write-Host " [OK]" -ForegroundColor Green
+    }
+    Pause
+}
+
+# --- Main Console Entry Point ---
+function Start-EntraSyncConsole {
+    Initialize-EntraFramework
+    do {
+        Write-EntraHeader "MAIN CONSOLE"
+        Write-Host "1.) [CLOUD]  Run Graph Audit"
+        Write-Host "2.) [LOCAL]  Align AD Attributes"
+        Write-Host "3.) [VIEW]   Examine History"
+        Write-Host "4.) [UNDO]   Rollback Engine"
+        Write-Host "5.) [EXT]    Manage Extensions (SSO/Writeback)"
+        Write-Host "Q.) [EXIT]"
+        
+        $Choice = Read-Host "`nSelection"
+        switch ($Choice) {
+            '1' { Invoke-CloudAudit }
+            '2' { Invoke-ADAlignment }
+            '3' { if (Test-Path $EntraConfig.Manifest) { Import-Csv $EntraConfig.Manifest | Out-GridView -Title "History" } }
+            '4' { Invoke-Rollback }
+            '5' { Invoke-ExtensionMenu }
+        }
+    } while ($Choice -ne 'Q')
+}
+
+Export-ModuleMember -Function Start-EntraSyncConsole
