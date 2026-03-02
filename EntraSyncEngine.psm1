@@ -21,6 +21,9 @@ $Global:EntraConfig = @{
     Manifest       = "C:\Temp\EntraMigration\MigrationManifest.csv"
     RequiredSuffix = "hgor.com"
 }
+$Global:EntraState = @{
+    LatestAuditCSV = $null
+}
 
 # --- Initialization ---
 function Initialize-EntraFramework {
@@ -60,7 +63,7 @@ function Invoke-CloudAudit {
     Write-EntraHeader "CLOUD AUDIT"
     
     # Surgical Module Check
-    $Req = @("Microsoft.Graph.Authentication", "Microsoft.Graph.Users")
+    $Req = @("Microsoft.Graph.Authentication", "Microsoft.Graph.Users", "Microsoft.PowerShell.ConsoleGuiTools")
     foreach ($M in $Req) {
         if (-not (Get-Module -ListAvailable $M)) {
             Write-EntraLog "[*] Installing $M..." "Cyan"
@@ -84,6 +87,7 @@ function Invoke-CloudAudit {
         $Users | Select-Object DisplayName, UserPrincipalName, @{Name = "ProxyAddresses"; Expression = { $_.ProxyAddresses -join ";" } } | 
         Export-Csv -Path $ExportPath -NoTypeInformation
             
+        $Global:EntraState.LatestAuditCSV = $ExportPath
         Write-EntraLog "[+] Exported $($Users.Count) users to $ExportPath" "Green"
     }
     catch {
@@ -102,28 +106,85 @@ function Invoke-ADAlignment {
         Pause; return
     }
 
-    $CSV = Read-Host "Path to Entra CSV"
+    # CSV State Passing
+    $CSV = $null
+    if ($Global:EntraState.LatestAuditCSV -and (Test-Path $Global:EntraState.LatestAuditCSV)) {
+        $PromptStr = "Path to Entra CSV [$($Global:EntraState.LatestAuditCSV)]"
+        $InputCSV = Read-Host $PromptStr
+        $CSV = if ([string]::IsNullOrWhiteSpace($InputCSV)) { $Global:EntraState.LatestAuditCSV } else { $InputCSV }
+    }
+    else {
+        $CSV = Read-Host "Path to Entra CSV"
+    }
+
     if (-not (Test-Path $CSV)) { Write-EntraLog "Invalid File." "Yellow"; Pause; return }
+
+    # Interactive OU Selection
+    Write-EntraLog "[*] Please select the target Organizational Unit (OU) for syncing from the popup window..." "Cyan"
+    if (-not (Get-Module -ListAvailable "Microsoft.PowerShell.ConsoleGuiTools")) {
+        Write-EntraLog "[*] Installing Microsoft.PowerShell.ConsoleGuiTools..." "Cyan"
+        Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+        Install-Module "Microsoft.PowerShell.ConsoleGuiTools" -Scope CurrentUser -AllowClobber -Force
+    }
+    Import-Module "Microsoft.PowerShell.ConsoleGuiTools"
+
+    $TargetOU = Get-ADOrganizationalUnit -Filter * -Properties Description | 
+    Select-Object Name, DistinguishedName, Description | 
+    Out-ConsoleGridView -Title "Select the Sync Target OU" -OutputMode Single
+    
+    if (-not $TargetOU) {
+        Write-EntraLog "[-] No OU selected. Aborting alignment." "Yellow"
+        Pause; return
+    }
+    Write-EntraLog "[+] Selected Target Scope: $($TargetOU.DistinguishedName)" "Green"
 
     # Full State Backup (Safety First)
     $Bkp = Join-Path $EntraConfig.BackupDir "AD_Bkp_$(Get-Date -Format 'yyyyMMdd_HHmm').xml"
-    Write-EntraLog "[*] Backing up AD State..." "Cyan"
-    Get-ADUser -Filter * -Properties * | Export-Clixml $Bkp
+    Write-EntraLog "[*] Backing up Target OU State..." "Cyan"
+    Get-ADUser -Filter * -SearchBase $TargetOU.DistinguishedName -Properties * | Export-Clixml $Bkp
 
     $Data = Import-Csv $CSV
+    
+    # Pre-flight Simulation
+    Write-EntraLog "[*] Simulating AD matches against cloud export..." "Cyan"
+    $MatchedUsers = @()
+    $Misses = @()
+
     foreach ($Line in $Data) {
         $UPN = $Line.UserPrincipalName
         $Prefix = $UPN.Split("@")[0]
         
-        # Advanced Match (MSP Logic)
-        $Target = Get-ADUser -Filter "SamAccountName -eq '$Prefix' -or mail -eq '$UPN' -or proxyAddresses -like '*$UPN*'" -Properties * -ErrorAction SilentlyContinue
+        # Advanced Match (MSP Logic) - Restricted to Enabled users within TargetOU
+        $Target = Get-ADUser -Filter { (Enabled -eq $true) -and (SamAccountName -eq $Prefix -or mail -eq $UPN -or proxyAddresses -like "*$UPN*") } -SearchBase $TargetOU.DistinguishedName -Properties proxyAddresses, mail -ErrorAction SilentlyContinue
         
-        if ($null -eq $Target) {
-            Write-EntraLog "[?] No Match for $UPN" "Yellow"
-            $Manual = Read-Host "SamAccountName (or S to skip)"
-            if ($Manual -eq 'S' -or $Manual -eq '') { continue }
-            $Target = Get-ADUser -Identity $Manual -Properties *
+        if ($null -ne $Target) {
+            $MatchedUsers += [PSCustomObject]@{ CloudUser = $UPN; ADUser = $Target }
         }
+        else {
+            $Misses += $UPN
+        }
+    }
+
+    Write-EntraLog "`n--- PRE-FLIGHT SUMMARY ---" "White"
+    Write-EntraLog "Active Cloud Accounts Evaluated: $($Data.Count)" "White"
+    Write-EntraLog "Active AD Matches Found:         $($MatchedUsers.Count)" "Green"
+    Write-EntraLog "Missing / Disabled / Unmatched:  $($Misses.Count)" "Yellow"
+    Write-EntraLog "--------------------------`n" "White"
+
+    if ($MatchedUsers.Count -eq 0) {
+        Write-EntraLog "[-] No active AD matches found in the selected OU. Aborting." "Red"
+        Pause; return
+    }
+
+    $Confirm = Read-Host "Type 'YES' to proceed with modifying $($MatchedUsers.Count) AD accounts"
+    if ($Confirm -cne 'YES') {
+        Write-EntraLog "[-] User aborted AD modifications." "Yellow"
+        Pause; return
+    }
+
+    foreach ($Item in $MatchedUsers) {
+        $UPN = $Item.CloudUser
+        $Target = $Item.ADUser
 
         # Transaction Logging
         $Log = [PSCustomObject]@{
