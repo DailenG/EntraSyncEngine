@@ -1,24 +1,61 @@
-# publish.ps1
-# Automates testing and publishing of EntraSyncEngine to the PSGallery.
+<#
+.SYNOPSIS
+    Publishes the EntraSyncEngine module to the PowerShell Gallery.
 
-$ModulePath = Join-Path $PSScriptRoot "EntraSyncEngine.psd1"
+.PARAMETER ApiKey
+    The NuGet API Key for the PowerShell Gallery. Required.
+#>
 
-Write-Host "[*] Auditing Module Manifest..." -ForegroundColor Cyan
-Test-ModuleManifest -Path $ModulePath
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$ApiKey
+)
 
-Write-Host "[?] Provide your PowerShell Gallery API Key to proceed with Publish-Module (or hit Enter to abort):" -ForegroundColor Yellow
-$ApiKey = Read-Host
+$ErrorActionPreference = 'Stop'
+$moduleName = "EntraSyncEngine"
+$modulePath = $PSScriptRoot
+$stagingPath = Join-Path -Path $modulePath -ChildPath "Staging"
+$stagingModulePath = Join-Path -Path $stagingPath -ChildPath $moduleName
 
-if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-    Write-Host "[-] Aborting publish." -ForegroundColor Yellow
-    exit
-}
+Write-Host "Starting publication process for '$moduleName'..." -ForegroundColor Cyan
 
-Write-Host "[*] Publishing EntraSyncEngine to PSGallery..." -ForegroundColor Cyan
 try {
-    Publish-Module -Path $PSScriptRoot -NuGetApiKey $ApiKey -Verbose -ErrorAction Stop
-    Write-Host "[+] Successfully Published EntraSyncEngine!" -ForegroundColor Green
+    Write-Host "Creating staging directory at '$stagingModulePath'..." -ForegroundColor Cyan
+    if (Test-Path -Path $stagingPath) {
+        Remove-Item -Path $stagingPath -Recurse -Force
+    }
+    New-Item -Path $stagingModulePath -ItemType Directory -Force | Out-Null
+
+    Write-Host "Copying module files to staging..." -ForegroundColor Cyan
+    # Explicitly staging required files to keep gallery payloads clean (excluding .git, etc)
+    $itemsToCopy = @(
+        "$moduleName.psd1",
+        "$moduleName.psm1",
+        "README.md",
+        "agent.md",
+        "Extensions",
+        "Guides"
+    )
+
+    foreach ($item in $itemsToCopy) {
+        $sourcePath = Join-Path -Path $modulePath -ChildPath $item
+        if (Test-Path -Path $sourcePath) {
+            Copy-Item -Path $sourcePath -Destination $stagingModulePath -Recurse -Force
+        }
+        else {
+            Write-Warning "Item '$item' not found, skipping..."
+        }
+    }
+
+    Write-Host "Publishing module to PowerShell Gallery..." -ForegroundColor Cyan
+    Publish-Module -Path $stagingModulePath -NuGetApiKey $ApiKey -Verbose
+    
+    Write-Host "Cleaning up staging directory..." -ForegroundColor Cyan
+    Remove-Item -Path $stagingPath -Recurse -Force
+
+    Write-Host "Successfully published $moduleName!" -ForegroundColor Green
 }
 catch {
-    Write-Host "[!] Publish Failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Error "Publishing failed: $_"
 }
