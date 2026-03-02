@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.0.0'
+    ModuleVersion        = '1.0.1'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.0.0 - Initial public release of the EntraSyncEngine framework. Interactive documentation available at https://deepwiki.com/DailenG/EntraSyncEngine'
+            ReleaseNotes = 'v1.0.1 - Refined disabled AD account prompt and updated repository metadata. Interactive documentation available at https://deepwiki.com/DailenG/EntraSyncEngine'
 
             # Prerelease string of this module
             # Prerelease = ''

@@ -195,8 +195,8 @@ function Invoke-ADAlignment {
         Write-EntraLog "    Because the AD account is disabled, Entra Connect WILL INSTANTLY DISABLE the cloud mailbox." "Red"
         Write-EntraLog "    If these are retained mailboxes (e.g., terminated employees), you must exclude them from the sync scope OR leave them unmatched.`n" "White"
         
-        Write-EntraLog "[?] If you understand and wish to proceed, solve this equation to five decimals: √π = ?" "Yellow"
-        $Ack = Read-Host "    (Type '1.77245' or 'OK' to proceed)"
+        Write-EntraLog "[?] If you understand and wish to proceed, type 'OK' or solve this equation to five decimals: √π = ?" "Yellow"
+        $Ack = Read-Host "    (Type 'OK' to proceed)"
         if ($Ack -notmatch '^(1\.77245|OK)$') {
             Write-EntraLog "[-] User aborted AD modifications due to Retained Mailbox risk." "Yellow"
             Pause; return
