@@ -235,7 +235,7 @@ function Invoke-ADAlignment {
             @{N = "AD_SamAccountName"; E = { $_.ADUser.SamAccountName } }, 
             @{N = "AD_Enabled"; E = { $_.ADUser.Enabled } },
             @{N = "AD_OldUPN"; E = { $_.ADUser.UserPrincipalName } } | 
-            Out-ConsoleGridView -Title "REVIEW PENDING AD ALIGNMENTS ($TotalMatches Accounts)"
+            Out-ConsoleGridView -Title "REVIEW PENDING AD ALIGNMENTS ($TotalMatches Accounts)" -OutputMode None
         }
         elseif ($Confirm -cne 'YES') {
             Write-EntraLog "[-] User aborted AD modifications." "Yellow"
