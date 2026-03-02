@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.0.6'
+    ModuleVersion        = '1.0.7'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.0.6 - Enforced a strict read-only constraint (-OutputMode None) on the interactive Pre-Sync AD Alignment Review Grid to prevent users from accidentally selecting sub-items.'
+            ReleaseNotes = 'v1.0.7 - Fixed two Set-ADUser pipeline bugs during alignment (duplicate "mail" attribute definition and un-typed proxyAddresses array). Removed case-sensitivity requirements from the YES confirmation prompt.'
 
             # Prerelease string of this module
             # Prerelease = ''

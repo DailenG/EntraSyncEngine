@@ -237,7 +237,7 @@ function Invoke-ADAlignment {
             @{N = "AD_OldUPN"; E = { $_.ADUser.UserPrincipalName } } | 
             Out-ConsoleGridView -Title "REVIEW PENDING AD ALIGNMENTS ($TotalMatches Accounts)" -OutputMode None
         }
-        elseif ($Confirm -cne 'YES') {
+        elseif ($Confirm -ne 'YES') {
             Write-EntraLog "[-] User aborted AD modifications." "Yellow"
             Pause; return
         }
@@ -260,10 +260,10 @@ function Invoke-ADAlignment {
         }
 
         try {
-            $Proxies = $Target.proxyAddresses | Where-Object { $_ -notlike "*$UPN*" }
+            [string[]]$Proxies = @($Target.proxyAddresses | Where-Object { $_ -notlike "*$UPN*" })
             $Proxies += "SMTP:$UPN"
             
-            Set-ADUser -Identity $Target.DistinguishedName -UserPrincipalName $UPN -EmailAddress $UPN -Replace @{mail = $UPN; proxyAddresses = $Proxies } -ErrorAction Stop
+            Set-ADUser -Identity $Target.DistinguishedName -UserPrincipalName $UPN -EmailAddress $UPN -Replace @{ proxyAddresses = $Proxies } -ErrorAction Stop
             $Log | Export-Csv $EntraConfig.Manifest -Append -NoTypeInformation
             Write-EntraLog "[+] Aligned: $($Target.SamAccountName)" "Green"
         }
