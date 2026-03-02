@@ -182,6 +182,18 @@ function Invoke-ADAlignment {
     Write-EntraLog "Disabled AD Matches Found:       $($DisabledMatches.Count)" "DarkYellow"
     Write-EntraLog "Missing / Unmatched:             $($Misses.Count)" "Yellow"
     Write-EntraLog "--------------------------`n" "White"
+    
+    Write-EntraLog "--- ALIGNMENT OVERVIEW ---" "Cyan"
+    Write-EntraLog "To ensure a perfect 'Soft-Match' when Microsoft Entra Connect Service is installed," "White"
+    Write-EntraLog "this engine will now surgically modify the local Active Directory accounts to match the Cloud." "White"
+    Write-EntraLog "For every matched account, the following AD attributes will be OVERWRITTEN:" "Yellow"
+    Write-EntraLog "  1. UserPrincipalName -> Replaced with the exact Cloud UPN." "White"
+    Write-EntraLog "  2. mail -> Replaced with the exact Cloud UPN." "White"
+    Write-EntraLog "  3. proxyAddresses -> The Cloud UPN will be injected as the primary SMTP address.`n" "White"
+    
+    Write-EntraLog "--- ENTRA CONNECT REQUIREMENT ---" "Cyan"
+    Write-EntraLog "When you install Entra Connect Sync (Phase 2), you MUST configure it to match using the" "White"
+    Write-EntraLog "UserPrincipalName or Mail attribute. Do not rely on ms-DS-ConsistencyGuid for the initial sync.`n" "White"
 
     if ($Misses.Count -gt 0) {
         Write-EntraLog "[!] WARNING: $($Misses.Count) Cloud Accounts could not be matched to ANY AD account." "Red"

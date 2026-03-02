@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.0.4'
+    ModuleVersion        = '1.0.5'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.0.4 - Introduced an interactive Pre-Sync AD Alignment Review Grid via Out-ConsoleGridView, allowing engineers to visualize all pending UPN matching before committing modifications.'
+            ReleaseNotes = 'v1.0.5 - Enhanced the AD Alignment console output to clearly detail to the engineer exactly what AD properties are about to be modified and how Entra Connect must be configured to successfully match them.'
 
             # Prerelease string of this module
             # Prerelease = ''
