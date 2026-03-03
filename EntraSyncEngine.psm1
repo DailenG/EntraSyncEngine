@@ -346,26 +346,76 @@ function Start-EntraSyncConsole {
     }
 
     Initialize-EntraFramework
-    do {
+    
+    $MenuItems = @(
+        [PSCustomObject]@{ Key = "0"; Label = "[GUIDE]  Read Deployment Workflow"; Action = { Invoke-DeploymentGuide } }
+        [PSCustomObject]@{ Key = "1"; Label = "[CLOUD]  Run Graph Audit"; Action = { Invoke-CloudAudit } }
+        [PSCustomObject]@{ Key = "2"; Label = "[LOCAL]  Align AD Attributes"; Action = { Invoke-ADAlignment } }
+        [PSCustomObject]@{ Key = "3"; Label = "[VIEW]   Examine History"; Action = { if (Test-Path $EntraConfig.Manifest) { Import-Csv $EntraConfig.Manifest | Out-GridView -Title "History" } else { Write-EntraLog "No history found." "Yellow"; Pause } } }
+        [PSCustomObject]@{ Key = "4"; Label = "[UNDO]   Rollback Engine"; Action = { Invoke-Rollback } }
+        [PSCustomObject]@{ Key = "5"; Label = "[EXT]    Manage Extensions (SSO/Writeback)"; Action = { Invoke-ExtensionMenu } }
+        [PSCustomObject]@{ Key = "Q"; Label = "[EXIT]"; Action = { return } }
+    )
+    
+    $SelectedIndex = 0
+    $KeepRunning = $true
+
+    while ($KeepRunning) {
         Write-EntraHeader "MAIN CONSOLE"
-        Write-Host "0.) [GUIDE]  Read Deployment Workflow"
-        Write-Host "1.) [CLOUD]  Run Graph Audit"
-        Write-Host "2.) [LOCAL]  Align AD Attributes"
-        Write-Host "3.) [VIEW]   Examine History"
-        Write-Host "4.) [UNDO]   Rollback Engine"
-        Write-Host "5.) [EXT]    Manage Extensions (SSO/Writeback)"
-        Write-Host "Q.) [EXIT]"
+        Write-Host "   Use Up/Down Arrows to navigate, Enter to select, or Number keys to jump.`n" -ForegroundColor DarkGray
         
-        $Choice = Read-Host "`nSelection"
-        switch ($Choice) {
-            '0' { Invoke-DeploymentGuide }
-            '1' { Invoke-CloudAudit }
-            '2' { Invoke-ADAlignment }
-            '3' { if (Test-Path $EntraConfig.Manifest) { Import-Csv $EntraConfig.Manifest | Out-GridView -Title "History" } }
-            '4' { Invoke-Rollback }
-            '5' { Invoke-ExtensionMenu }
+        for ($i = 0; $i -lt $MenuItems.Count; $i++) {
+            if ($i -eq $SelectedIndex) {
+                Write-Host "  -> $($MenuItems[$i].Key).) $($MenuItems[$i].Label) " -ForegroundColor Black -BackgroundColor Cyan
+            }
+            else {
+                Write-Host "     $($MenuItems[$i].Key).) $($MenuItems[$i].Label) " -ForegroundColor White
+            }
         }
-    } while ($Choice -ne 'Q')
+        
+        $KeyInfo = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        
+        if ($KeyInfo.VirtualKeyCode -eq 38) {
+            # Up Arrow
+            $SelectedIndex--
+            if ($SelectedIndex -lt 0) { $SelectedIndex = $MenuItems.Count - 1 }
+        }
+        elseif ($KeyInfo.VirtualKeyCode -eq 40) {
+            # Down Arrow
+            $SelectedIndex++
+            if ($SelectedIndex -ge $MenuItems.Count) { $SelectedIndex = 0 }
+        }
+        elseif ($KeyInfo.VirtualKeyCode -eq 13) {
+            # Enter
+            if ($MenuItems[$SelectedIndex].Key -eq "Q") {
+                $KeepRunning = $false
+            }
+            else {
+                & $MenuItems[$SelectedIndex].Action
+                if ($SelectedIndex -lt ($MenuItems.Count - 2)) {
+                    $SelectedIndex++ # Auto-advance to the next logical step
+                }
+            }
+        }
+        else {
+            $Char = $KeyInfo.Character.ToString().ToUpper()
+            for ($i = 0; $i -lt $MenuItems.Count; $i++) {
+                if ($MenuItems[$i].Key -eq $Char) {
+                    $SelectedIndex = $i
+                    if ($MenuItems[$i].Key -eq "Q") {
+                        $KeepRunning = $false
+                    }
+                    else {
+                        & $MenuItems[$i].Action
+                        if ($SelectedIndex -lt ($MenuItems.Count - 2)) {
+                            $SelectedIndex++ # Auto-advance
+                        }
+                    }
+                    break
+                }
+            }
+        }
+    }
 }
 
 Export-ModuleMember -Function Start-EntraSyncConsole
