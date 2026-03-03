@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.2.0'
+    ModuleVersion        = '1.3.0'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.2.0 - Complete overhaul of the main console menu system. Replaced static text prompts with a fully interactive, keyboard-navigable interface supporting Up/Down arrow selection, direct Number key execution, and auto-advancement state tracking.'
+            ReleaseNotes = 'v1.3.0 - Added the new [SYNC] Analyze Entra Connect Results feature (Option 6). This tool parses the CSV output from CSExportAnalyzer to programmatically tally successful soft-matches vs failed duplicates, actively tracking Staging Mode validation.'
 
             # Prerelease string of this module
             Prerelease   = 'beta'
