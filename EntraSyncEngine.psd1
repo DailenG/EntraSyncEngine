@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.3.2'
+    ModuleVersion        = '1.3.3'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.3.2 - Hotfix: Parenthetical repair on Test-Path evaluations to prevent silent failures during dynamic Entra Connect binary detection.'
+            ReleaseNotes = 'v1.3.3 - Hotfix: Updated CSExportAnalyzer CSV parsing logic to target the correct Microsoft ILM OMODT (Object Modification Type) column rather than Omit, and filter out native Summary footer rows.'
 
             # Prerelease string of this module
             Prerelease   = 'beta'
