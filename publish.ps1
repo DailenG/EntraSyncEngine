@@ -48,7 +48,13 @@ try {
         }
     }
 
-    Write-Host "Publishing module to PowerShell Gallery..." -ForegroundColor Cyan
+    $manifestData = Import-PowerShellDataFile -Path (Join-Path $stagingModulePath "$moduleName.psd1")
+    $versionString = $manifestData.ModuleVersion
+    if ($manifestData.PrivateData.PSData.Prerelease) {
+        $versionString += "-" + $manifestData.PrivateData.PSData.Prerelease
+    }
+    
+    Write-Host "Publishing $moduleName $versionString to PowerShell Gallery..." -ForegroundColor Cyan
     Publish-Module -Path $stagingModulePath -NuGetApiKey $ApiKey
     
     Write-Host "Cleaning up staging directory..." -ForegroundColor Cyan
