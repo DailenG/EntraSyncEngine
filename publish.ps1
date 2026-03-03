@@ -49,7 +49,7 @@ try {
     }
 
     Write-Host "Publishing module to PowerShell Gallery..." -ForegroundColor Cyan
-    Publish-Module -Path $stagingModulePath -NuGetApiKey $ApiKey -Verbose
+    Publish-Module -Path $stagingModulePath -NuGetApiKey $ApiKey
     
     Write-Host "Cleaning up staging directory..." -ForegroundColor Cyan
     Remove-Item -Path $stagingPath -Recurse -Force
