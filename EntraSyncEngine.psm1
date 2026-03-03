@@ -344,7 +344,7 @@ function Invoke-SyncAnalyzer {
     $AADAustinDir = "C:\Program Files\Microsoft Azure AD Sync\Bin"
     $CsvPath = ""
 
-    if (Test-Path "$AADAustinDir\csexport.exe" -and Test-Path "$AADAustinDir\CSExportAnalyzer.exe") {
+    if ((Test-Path "$AADAustinDir\csexport.exe") -and (Test-Path "$AADAustinDir\CSExportAnalyzer.exe")) {
         Write-EntraLog "[*] Entra Connect binaries detected. Automating extraction..." "Cyan"
         $Prefix = Read-Host "Enter your Azure Tenant Prefix (e.g., 'contoso' for contoso.onmicrosoft.com)"
         if (-not $Prefix) { Write-EntraLog "[-] Prefix required."; Pause; return }
