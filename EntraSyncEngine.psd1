@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.0.7'
+    ModuleVersion        = '1.2.0'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.0.7 - Fixed two Set-ADUser pipeline bugs during alignment (duplicate "mail" attribute definition and un-typed proxyAddresses array). Removed case-sensitivity requirements from the YES confirmation prompt.'
+            ReleaseNotes = 'v1.2.0 - Complete overhaul of the main console menu system. Replaced static text prompts with a fully interactive, keyboard-navigable interface supporting Up/Down arrow selection, direct Number key execution, and auto-advancement state tracking.'
 
             # Prerelease string of this module
             # Prerelease = ''
