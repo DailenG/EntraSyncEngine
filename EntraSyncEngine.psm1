@@ -341,7 +341,38 @@ function Invoke-SyncAnalyzer {
     Write-Host "This tool parses the CSV output from Microsoft's CSExportAnalyzer utility." -ForegroundColor DarkGray
     Write-Host "It will tally successful 'Update' soft-matches vs failed 'Add' duplicates.`n" -ForegroundColor DarkGray
 
-    $CsvPath = Read-Host "Enter the absolute path to your CSExportAnalyzer CSV file"
+    $AADAustinDir = "C:\Program Files\Microsoft Azure AD Sync\Bin"
+    $CsvPath = ""
+
+    if (Test-Path "$AADAustinDir\csexport.exe" -and Test-Path "$AADAustinDir\CSExportAnalyzer.exe") {
+        Write-EntraLog "[*] Entra Connect binaries detected. Automating extraction..." "Cyan"
+        $Prefix = Read-Host "Enter your Azure Tenant Prefix (e.g., 'contoso' for contoso.onmicrosoft.com)"
+        if (-not $Prefix) { Write-EntraLog "[-] Prefix required."; Pause; return }
+        
+        $ConnectorName = "$Prefix.onmicrosoft.com - AAD"
+        $XmlPath = Join-Path $EntraConfig.RootDir "PendingExports.xml"
+        $CsvPath = Join-Path $EntraConfig.RootDir "PendingExports.csv"
+
+        Write-EntraLog "[*] Extracting Staging Mode XML via csexport.exe..." "Cyan"
+        # Run csexport natively, suppressing its own console noise
+        & "$AADAustinDir\csexport.exe" $ConnectorName $XmlPath /f:x | Out-Null
+        
+        if (-not (Test-Path $XmlPath)) {
+            Write-EntraLog "[-] csexport failed. Ensure you are in Staging Mode and the Prefix is correct." "Red"
+            Pause; return
+        }
+
+        Write-EntraLog "[*] Converting XML to CSV via CSExportAnalyzer... " "Cyan"
+        # cmd.exe bridging is required here because CSExportAnalyzer exclusively writes to standard output via > redirection
+        cmd.exe /c "`"$AADAustinDir\CSExportAnalyzer.exe`" `"$XmlPath`" > `"$CsvPath`""
+
+        Remove-Item $XmlPath -Force -ErrorAction SilentlyContinue
+    }
+    else {
+        Write-Host "Entra Connect binaries not found natively. Assuming remote workstation." -ForegroundColor Yellow
+        $CsvPath = Read-Host "Enter the absolute path to your manually generated CSExportAnalyzer CSV file"
+    }
+
     if (-not (Test-Path $CsvPath) -or ($CsvPath -notmatch '\.csv$')) {
         Write-EntraLog "[-] Invalid file path or not a .csv file." "Red"
         Pause; return
@@ -374,6 +405,12 @@ function Invoke-SyncAnalyzer {
     }
     catch {
         Write-EntraLog "[-] Failed to parse CSV: $($_.Exception.Message)" "Red"
+    }
+    finally {
+        # Optional: cleanup the automated CSV if it was generated in the RootDir
+        if ($CsvPath -match "PendingExports\.csv$") {
+            Remove-Item $CsvPath -Force -ErrorAction SilentlyContinue
+        }
     }
     Pause
 }
