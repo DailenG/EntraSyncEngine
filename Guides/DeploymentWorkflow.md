@@ -29,6 +29,13 @@ At this point, your identities are perfectly aligned. Run the installer from Mic
 
 The installer will also configure its prerequisites, such as creating the `MSOL_` execution account and setting up the `AZUREADSSOACC` computer object for Single Sign-On.
 
+### Phase 2B: Validate Soft-Matches (Staging Mode)
+If you installed Entra Connect in **Staging Mode**, you can mathematically verify every single match *before* it exports to the cloud.
+
+1. On the Entra Connect server, export the pending changes to XML/CSV using Microsoft's native `CSExportAnalyzer` tool.
+2. Run **Option 3: Analyze Entra Connect Results**.
+3. Provide the path to your CSV. The engine will parse the document and parse successful links (`Update` operations) vs failed duplicate creations (`Add` operations). If any accounts failed to match, it will dump them into an interactive review grid so you can manually investigate them before disabling Staging Mode.
+
 ## Phase 3: Post-Sync Verification & Configuration
 **Run this AFTER Entra Connect is installed to tidy up advanced capabilities.**
 
