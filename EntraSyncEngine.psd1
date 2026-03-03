@@ -122,7 +122,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             ReleaseNotes = 'v1.2.0 - Complete overhaul of the main console menu system. Replaced static text prompts with a fully interactive, keyboard-navigable interface supporting Up/Down arrow selection, direct Number key execution, and auto-advancement state tracking.'
 
             # Prerelease string of this module
-            # Prerelease = ''
+            Prerelease   = 'beta'
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
             # RequireLicenseAcceptance = $false
