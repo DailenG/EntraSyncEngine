@@ -14,12 +14,20 @@ This tool is designed to be used structurally across three distinct phases in or
 ### Edge Case: Retained Mailboxes (Disabled AD Accounts)
 > **WARNING:** If you have active cloud mailboxes belonging to disabled AD accounts (e.g., terminated employees whose mailboxes are being retained), **Microsoft Entra Connect Sync will disable their cloud accounts** when it bridges the `accountEnabled` states, effectively breaking mailbox access.
 >
-> The Engine's Pre-Flight check actively hunts for these matches. If it finds active cloud accounts mapping to disabled AD accounts, it will halt and prompt you to literally type `ACKNOWLEDGE` before proceeding. If this happens, you MUST either exclude those specific disabled AD accounts from your sync scope within the Entra Connect wizard, or leave them unmatched!
+> The Engine's Pre-Flight check actively hunts for these matches. If it finds active cloud accounts mapping to disabled AD accounts, it will halt and explicitly warn you. It requires you to either physically type `OK` or solve a math equation (`√π`) to proceed, actively breaking muscle-memory confirmation. If this happens, you MUST either exclude those specific disabled AD accounts from your sync scope within the Entra Connect wizard, or leave them unmatched!
+
+### The Pre-Sync Review Grid
+> Before committing any surgical changes to Active Directory, the engine will prompt you with an interactive `Out-ConsoleGridView` table. Typing `REVIEW` at the confirmation prompt allows you to visually audit every pending AD attribute overwrite (UPN, SAM, Enable State) to ensure the matching logic performed safely before committing database writes.
 
 ## Phase 2: Install Microsoft Entra Connect
 **Run the official Microsoft Entra Connect wizard.**
 
-At this point, your identities are perfectly aligned. Run the installer from Microsoft. It will seamlessly "Soft-Match" your cloud users to your local AD users. The installer will also configure its prerequisites, such as creating the `MSOL_` execution account and setting up the `AZUREADSSOACC` computer object for Single Sign-On.
+At this point, your identities are perfectly aligned. Run the installer from Microsoft. It will seamlessly "Soft-Match" your cloud users to your local AD users.
+
+> **CRITICAL ENTRA CONNECT MATCH REQUIREMENT:**
+> During the Entra Connect installation wizard, you MUST configure the sync engine to match based on **UserPrincipalName** or **Mail** attribute. Do *not* rely on `ms-DS-ConsistencyGuid` for the initial alignment sync, or the soft-match logic may fail to bridge the disparate environments.
+
+The installer will also configure its prerequisites, such as creating the `MSOL_` execution account and setting up the `AZUREADSSOACC` computer object for Single Sign-On.
 
 ## Phase 3: Post-Sync Verification & Configuration
 **Run this AFTER Entra Connect is installed to tidy up advanced capabilities.**
