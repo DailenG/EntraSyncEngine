@@ -122,7 +122,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             ReleaseNotes = 'v1.4.2 - UI Enhancement: The main console header now intelligently queries and caches the Entra Connect Staging Mode status upon launch. If Staging Mode is active, a prominent blue warning banner is injected into the header. The [QUICK] menu Staging Mode diagnostic tool was also updated to forcefully refresh this global cache.'
 
             # Prerelease string of this module
-            Prerelease   = 'beta'
+            # Prerelease   = ''
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
             # RequireLicenseAcceptance = $false
