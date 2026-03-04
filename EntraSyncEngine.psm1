@@ -449,8 +449,8 @@ function Invoke-SyncAnalyzer {
         Write-Host "Failed Soft-Matches           : $($Adds.Count) (Adds)`n" -ForegroundColor Yellow
 
         if ($Adds.Count -gt 0) {
-            Write-EntraLog "[!] Opening grid view for Failed Matches (Adds)." "Yellow"
-            
+            Write-EntraLog "[!] Opening grid view for Failed Matches (Adds). Press Enter to continue..." "Yellow"
+            Pause
             $ProcessedAdds | Out-ConsoleGridView -Title "FAILED SOFT-MATCHES (Pending Cloud Duplicates)" -OutputMode None
         }
         else {
