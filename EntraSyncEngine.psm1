@@ -410,30 +410,34 @@ function Invoke-SyncAnalyzer {
         $TargetedCount = 0
         $UnrelatedCount = 0
         
-        # We process the CSV to extract the readable UPN for the grid view, bypassing the ILM CN={GUID} obfuscation
-        $ProcessedAdds = @()
+        # We process the CSV to extract a readable table for the user
+        $OutputTable = @()
         
         foreach ($Obj in $DistinctObjects) {
             # Extract the actual User Principal Name from the raw CSExportAnalyzer attribute rows
             $UpnRow = $Obj.Group | Where-Object { $_.AttrName -eq 'userPrincipalName' }
             $ParsedUPN = if ($UpnRow) { $UpnRow.NewValue } else { "Unknown ($($Obj.Name))" }
             
+            $IsTargeted = "Unrelated"
             if ($Global:EntraState.AlignedUsers.Count -gt 0) {
                 # Cross-reference the parsed UPN against our session memory bank
                 if ($Global:EntraState.AlignedUsers -contains $ParsedUPN) {
                     $TargetedCount++
+                    $IsTargeted = "Targeted"
                 }
                 else {
                     $UnrelatedCount++
                 }
             }
             
-            if ($Obj.Group[0].OMODT -eq 'Add') {
-                $ProcessedAdds += [PSCustomObject]@{
-                    OMODT   = 'Add'
-                    Account = $ParsedUPN
-                    ILM_ID  = $Obj.Name
-                }
+            $OMODT = $Obj.Group[0].OMODT
+            $Status = if ($OMODT -eq 'Update') { "Success (Soft-Match)" } elseif ($OMODT -eq 'Add') { "Failed (Duplicate)" } else { $OMODT }
+            
+            $OutputTable += [PSCustomObject]@{
+                Account  = $ParsedUPN
+                Status   = $Status
+                Tracking = $IsTargeted
+                ILM_ID   = $Obj.Name
             }
         }
 
@@ -448,13 +452,16 @@ function Invoke-SyncAnalyzer {
         Write-Host "`nSuccessful Soft-Matches       : $($Updates.Count) (Updates)" -ForegroundColor Green
         Write-Host "Failed Soft-Matches           : $($Adds.Count) (Adds)`n" -ForegroundColor Yellow
 
-        if ($Adds.Count -gt 0) {
-            Write-EntraLog "[!] Opening grid view for Failed Matches (Adds). Press Enter to continue..." "Yellow"
-            Pause
-            $ProcessedAdds | Out-ConsoleGridView -Title "FAILED SOFT-MATCHES (Pending Cloud Duplicates)" -OutputMode None
+        if ($Adds.Count -eq 0) {
+            Write-EntraLog "[+] Flawless execution! No 'Add' operations detected. All accounts soft-matched successfully!`n" "Green"
         }
-        else {
-            Write-EntraLog "[+] Flawless execution! No 'Add' operations detected. All accounts soft-matched successfully!" "Green"
+
+        if ($OutputTable.Count -gt 0) {
+            $Prompt = Read-Host "[?] View detailed table breakdown? (Type 'Y' or press Enter to continue)"
+            if ($Prompt -match '(?i)^Y') {
+                Write-Host "`n--- DETAILED SYNC RESULTS ---" -ForegroundColor Cyan
+                $OutputTable | Sort-Object Status, Tracking, Account | Format-Table Account, Status, Tracking, ILM_ID -AutoSize
+            }
         }
     }
     catch {

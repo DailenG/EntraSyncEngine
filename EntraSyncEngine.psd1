@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.3.9'
+    ModuleVersion        = '1.3.10'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.3.9 - Hotfix: Re-engineered the State Correlation engine to track and cross-reference the userPrincipalName rather than the DistinguishedName, bypassing the Identity Lifecycle Manager (ILM) CN={GUID} obfuscation injected natively by CSExportAnalyzer.'
+            ReleaseNotes = 'v1.3.10 - UX Improvement: Replaced the abrupt Out-ConsoleGridView popup in the Sync Analyzer with an interactive prompt. Users can now opt-in to view a fully detailed, scannable Format-Table output natively in the console, which lists all accounts, their precise success/failure statuses, and their session tracking correlation.'
 
             # Prerelease string of this module
             Prerelease   = 'beta'
