@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.5.0'
+    ModuleVersion        = '1.6.0'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.5.0 - Feature: Added sweeping Duplicate Conflict Detection. During the Invoke-ADAlignment pre-flight simulation, the engine will now hunt your entire AD domain for any existing objects that share the Target UPN or ProxyAddress of your pending identities. If duplicates are found, those specific users are gracefully blocked from alignment to protect your subsequent Entra Connect soft-matches from fatal AttributeConflictName collisions.'
+            ReleaseNotes = 'v1.6.0 - Feature: Added Cloud ProxyAddress Synchronization. The Invoke-ADAlignment engine now dynamically parses your pending Entra Connect M365 exports for secondary email aliases. During alignment, it injects these cloud aliases directly into the Local Active Directory object`s payload. Because Entra Connect makes AD the Source of Authority upon soft-match, this safety feature guarantees your M365 aliases are protected from erasure during the initial synchronization cycle.'
 
             # Prerelease string of this module
             # Prerelease   = ''

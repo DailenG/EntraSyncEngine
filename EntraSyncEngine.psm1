@@ -178,6 +178,15 @@ function Invoke-ADAlignment {
         $UPN = $Line.UserPrincipalName
         $Prefix = $UPN.Split("@")[0]
         
+        # --- v1.6.0 Cloud Proxy Extract ---
+        $CloudProxies = @()
+        if ($null -ne $Line.'Proxy addresses') {
+            $CloudProxies = $Line.'Proxy addresses' -split '[,;]' | ForEach-Object { $_.Trim() } | Where-Object { $_ -match '(?i)^smtp:' -and ($_ -replace '(?i)^smtp:', '') -ne $UPN }
+        }
+        elseif ($null -ne $Line.'Aliases') {
+            $CloudProxies = $Line.'Aliases' -split '[,;]' | ForEach-Object { "smtp:" + $_.Trim() } | Where-Object { $_ -ne 'smtp:' -and ($_ -replace '(?i)^smtp:', '') -ne $UPN }
+        }
+        
         # Advanced Match (MSP Logic) - Search for both enabled and disabled accounts
         $Target = Get-ADUser -Filter { SamAccountName -eq $Prefix -or mail -eq $UPN -or proxyAddresses -like "*$UPN*" } -SearchBase $TargetOU.DistinguishedName -Properties proxyAddresses, mail, Enabled -ErrorAction SilentlyContinue
         
@@ -186,7 +195,7 @@ function Invoke-ADAlignment {
             # Search the ENTIRE local domain for ANY object holding this UPN as a proxy address or primary UPN
             $Duplicates = Get-ADObject -Filter { UserPrincipalName -eq $UPN -or ProxyAddresses -like "*smtp:$UPN*" -or ProxyAddresses -like "*SMTP:$UPN*" } -Properties UserPrincipalName, ProxyAddresses -ErrorAction SilentlyContinue | Where-Object { $_.DistinguishedName -ne $Target.DistinguishedName }
             
-            $MatchObj = [PSCustomObject]@{ CloudUser = $UPN; ADUser = $Target; Duplicates = $Duplicates }
+            $MatchObj = [PSCustomObject]@{ CloudUser = $UPN; ADUser = $Target; Duplicates = $Duplicates; CloudProxies = $CloudProxies }
             
             if ($Duplicates) {
                 # A blocker is present in another object!
@@ -288,6 +297,7 @@ function Invoke-ADAlignment {
             Select-Object @{N = "Action"; E = { "Align Properties" } },
             @{N = "Cloud_UPN"; E = { $_.CloudUser } }, 
             @{N = "AD_SamAccountName"; E = { $_.ADUser.SamAccountName } }, 
+            @{N = "Cloud_Aliases"; E = { $_.CloudProxies -join ";" } },
             @{N = "AD_Enabled"; E = { $_.ADUser.Enabled } },
             @{N = "AD_OldUPN"; E = { $_.ADUser.UserPrincipalName } } | 
             Out-ConsoleGridView -Title "REVIEW PENDING AD ALIGNMENTS ($TotalMatches Accounts)" -OutputMode None
@@ -303,6 +313,7 @@ function Invoke-ADAlignment {
     foreach ($Item in $AllMatches) {
         $UPN = $Item.CloudUser
         $Target = $Item.ADUser
+        $CloudProxies = $Item.CloudProxies
 
         # Transaction Logging
         $Log = [PSCustomObject]@{
@@ -317,6 +328,21 @@ function Invoke-ADAlignment {
         try {
             [string[]]$Proxies = @($Target.proxyAddresses | Where-Object { $_ -notlike "*$UPN*" })
             $Proxies += "SMTP:$UPN"
+            
+            # --- v1.6.0 Inject Cloud Aliases ---
+            foreach ($P in $CloudProxies) {
+                # Ensure we don't duplicate proxies already embedded in AD
+                $IsDuplicate = $false
+                foreach ($ADProxy in $Proxies) {
+                    if ($ADProxy -match "(?i)^$([regex]::Escape($P))$") {
+                        $IsDuplicate = $true
+                        break
+                    }
+                }
+                if (-not $IsDuplicate) {
+                    $Proxies += $P
+                }
+            }
             
             Set-ADUser -Identity $Target.DistinguishedName -UserPrincipalName $UPN -EmailAddress $UPN -Replace @{ proxyAddresses = $Proxies } -ErrorAction Stop
             $Log | Export-Csv $EntraConfig.Manifest -Append -NoTypeInformation
