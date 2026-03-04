@@ -171,6 +171,7 @@ function Invoke-ADAlignment {
     Write-EntraLog "[*] Simulating AD matches against cloud export..." "Cyan"
     $ActiveMatches = @()
     $DisabledMatches = @()
+    $ConflictMatches = @()
     $Misses = @()
 
     foreach ($Line in $Data) {
@@ -181,8 +182,17 @@ function Invoke-ADAlignment {
         $Target = Get-ADUser -Filter { SamAccountName -eq $Prefix -or mail -eq $UPN -or proxyAddresses -like "*$UPN*" } -SearchBase $TargetOU.DistinguishedName -Properties proxyAddresses, mail, Enabled -ErrorAction SilentlyContinue
         
         if ($null -ne $Target) {
-            $MatchObj = [PSCustomObject]@{ CloudUser = $UPN; ADUser = $Target }
-            if ($Target.Enabled) {
+            # --- v1.5.0 Duplicate Conflict Detection ---
+            # Search the ENTIRE local domain for ANY object holding this UPN as a proxy address or primary UPN
+            $Duplicates = Get-ADObject -Filter { UserPrincipalName -eq $UPN -or ProxyAddresses -like "*smtp:$UPN*" -or ProxyAddresses -like "*SMTP:$UPN*" } -Properties UserPrincipalName, ProxyAddresses -ErrorAction SilentlyContinue | Where-Object { $_.DistinguishedName -ne $Target.DistinguishedName }
+            
+            $MatchObj = [PSCustomObject]@{ CloudUser = $UPN; ADUser = $Target; Duplicates = $Duplicates }
+            
+            if ($Duplicates) {
+                # A blocker is present in another object!
+                $ConflictMatches += $MatchObj
+            }
+            elseif ($Target.Enabled) {
                 $ActiveMatches += $MatchObj
             }
             else {
@@ -201,6 +211,9 @@ function Invoke-ADAlignment {
     Write-EntraLog "Active AD Matches Found:         $($ActiveMatches.Count)" "Green"
     Write-EntraLog "Disabled AD Matches Found:       $($DisabledMatches.Count)" "DarkYellow"
     Write-EntraLog "Missing / Unmatched:             $($Misses.Count)" "Yellow"
+    if ($ConflictMatches.Count -gt 0) {
+        Write-EntraLog "Duplicate Conflicts Detected:    $($ConflictMatches.Count)" "Red"
+    }
     Write-EntraLog "--------------------------`n" "White"
     
     Write-EntraLog "--- ALIGNMENT OVERVIEW ---" "Cyan"
@@ -236,11 +249,33 @@ function Invoke-ADAlignment {
         }
     }
 
+    if ($ConflictMatches.Count -gt 0) {
+        Write-EntraLog "[!] CRITICAL WARNING: $($ConflictMatches.Count) Target Accounts have DUPLICATE ProxyAddress/UPN Conflicts!" "Red"
+        Write-EntraLog "    The following targeted users share a primary UPN or ProxyAddress with another existing AD object." "Red"
+        Write-EntraLog "    If aligned, Entra Connect will fatally abort their soft-match and throw an 'AttributeConflictName' error." "Red"
+        Write-EntraLog "    To protect your sync, these users will be SKIPPED during this alignment phase:`n" "Yellow"
+
+        foreach ($Conflict in $ConflictMatches) {
+            Write-EntraLog "     - Target: $($Conflict.CloudUser)" "White"
+            foreach ($Dup in $Conflict.Duplicates) {
+                Write-EntraLog "       -> Blocked By: $($Dup.DistinguishedName)" "DarkGray"
+            }
+        }
+        
+        Write-EntraLog "`n[?] If you understand that these accounts will be skipped, type 'OK' to proceed with aligning the remaining users." "Yellow"
+        $Ack = Read-Host "    (Type 'OK' to proceed)"
+        if ($Ack -notmatch '(?i)^OK$') {
+            Write-EntraLog "[-] User aborted AD modifications to investigate duplicates." "Yellow"
+            Pause; return
+        }
+    }
+
     if ($TotalMatches -eq 0) {
-        Write-EntraLog "[-] No AD matches found in the selected OU. Aborting." "Red"
+        Write-EntraLog "[-] No actionable AD matches found in the selected OU. Aborting." "Red"
         Pause; return
     }
 
+    # Only include Active and Disabled matches in the modification payload. Conflicts are explicitly left behind.
     $AllMatches = $ActiveMatches + $DisabledMatches
     
     while ($true) {

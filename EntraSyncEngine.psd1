@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.4.3'
+    ModuleVersion        = '1.5.0'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.4.3 - Hotfix: Modified all functions within the [QUICK] menu to explicitly run `Import-Module ADSync` before attempting to execute their payloads. This resolves an issue where PowerShell 7 sessions could fail to auto-load the native Entra Connect module.'
+            ReleaseNotes = 'v1.5.0 - Feature: Added sweeping Duplicate Conflict Detection. During the Invoke-ADAlignment pre-flight simulation, the engine will now hunt your entire AD domain for any existing objects that share the Target UPN or ProxyAddress of your pending identities. If duplicates are found, those specific users are gracefully blocked from alignment to protect your subsequent Entra Connect soft-matches from fatal AttributeConflictName collisions.'
 
             # Prerelease string of this module
             # Prerelease   = ''
