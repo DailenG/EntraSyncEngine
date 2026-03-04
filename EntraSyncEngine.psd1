@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.3.10'
+    ModuleVersion        = '1.3.11'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.3.10 - UX Improvement: Replaced the abrupt Out-ConsoleGridView popup in the Sync Analyzer with an interactive prompt. Users can now opt-in to view a fully detailed, scannable Format-Table output natively in the console, which lists all accounts, their precise success/failure statuses, and their session tracking correlation.'
+            ReleaseNotes = 'v1.3.11 - UX Improvement: Renamed the menu option for managing extensions from [EXT] to [MORE] to visually distance it from the [EXIT] option.'
 
             # Prerelease string of this module
             Prerelease   = 'beta'

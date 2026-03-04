@@ -495,7 +495,7 @@ function Start-EntraSyncConsole {
         [PSCustomObject]@{ Key = "3"; Label = "[SYNC]   Analyze Entra Connect Results"; Action = { Invoke-SyncAnalyzer } }
         [PSCustomObject]@{ Key = "4"; Label = "[VIEW]   Examine History"; Action = { if (Test-Path $EntraConfig.Manifest) { Import-Csv $EntraConfig.Manifest | Out-GridView -Title "History" } else { Write-EntraLog "No history found." "Yellow"; Pause } } }
         [PSCustomObject]@{ Key = "5"; Label = "[UNDO]   Rollback Engine"; Action = { Invoke-Rollback } }
-        [PSCustomObject]@{ Key = "6"; Label = "[EXT]    Manage Extensions (SSO/Writeback)"; Action = { Invoke-ExtensionMenu } }
+        [PSCustomObject]@{ Key = "6"; Label = "[MORE]   Manage Extensions (SSO/Writeback)"; Action = { Invoke-ExtensionMenu } }
         [PSCustomObject]@{ Key = "Q"; Label = "[EXIT]"; Action = { return } }
     )
     
