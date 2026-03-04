@@ -480,8 +480,8 @@ function Invoke-SyncAnalyzer {
 function Invoke-QuickActions {
     $SelectedIndex = 0
     $QuickItems = @(
-        [PSCustomObject]@{ Key = "1"; Label = "[SYNC] Trigger Delta Sync Cycle"; Action = { Write-EntraLog "[*] Executing Delta Sync..." "Cyan"; try { Start-ADSyncSyncCycle -PolicyType Delta; Write-EntraLog "[+] Delta Sync triggered successfully." "Green" } catch { Write-EntraLog "[-] Failed: $($_.Exception.Message)" "Red" }; Pause } }
-        [PSCustomObject]@{ Key = "2"; Label = "[SYNC] Trigger Initial (Full) Sync Cycle"; Action = { Write-EntraLog "[*] Executing Initial Sync..." "Cyan"; try { Start-ADSyncSyncCycle -PolicyType Initial; Write-EntraLog "[+] Initial Sync triggered successfully." "Green" } catch { Write-EntraLog "[-] Failed: $($_.Exception.Message)" "Red" }; Pause } }
+        [PSCustomObject]@{ Key = "1"; Label = "[DELTA] Trigger Delta Sync Cycle"; Action = { Write-EntraLog "[*] Executing Delta Sync..." "Cyan"; try { Start-ADSyncSyncCycle -PolicyType Delta; Write-EntraLog "[+] Delta Sync triggered successfully." "Green" } catch { Write-EntraLog "[-] Failed: $($_.Exception.Message)" "Red" }; Pause } }
+        [PSCustomObject]@{ Key = "2"; Label = "[FULL]  Trigger Initial (Full) Sync Cycle"; Action = { Write-EntraLog "[*] Executing Initial Sync..." "Cyan"; try { Start-ADSyncSyncCycle -PolicyType Initial; Write-EntraLog "[+] Initial Sync triggered successfully." "Green" } catch { Write-EntraLog "[-] Failed: $($_.Exception.Message)" "Red" }; Pause } }
         [PSCustomObject]@{ Key = "3"; Label = "[INFO] View Scheduler Status"; Action = { Write-EntraLog "[*] Querying Scheduler..." "Cyan"; try { Get-ADSyncScheduler | Out-ConsoleGridView -Title "Entra Connect Scheduler Details" -OutputMode None } catch { Write-EntraLog "[-] Failed to get scheduler: $($_.Exception.Message)" "Red"; Pause } } }
         [PSCustomObject]@{ Key = "Q"; Label = "[BACK] Return to Main Menu"; Action = { return } }
     )
