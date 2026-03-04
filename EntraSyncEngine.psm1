@@ -23,6 +23,7 @@ $Global:EntraConfig = @{
 }
 $Global:EntraState = @{
     LatestAuditCSV = $null
+    AlignedUsers   = @()
 }
 
 # --- Initialization ---
@@ -265,6 +266,10 @@ function Invoke-ADAlignment {
             
             Set-ADUser -Identity $Target.DistinguishedName -UserPrincipalName $UPN -EmailAddress $UPN -Replace @{ proxyAddresses = $Proxies } -ErrorAction Stop
             $Log | Export-Csv $EntraConfig.Manifest -Append -NoTypeInformation
+            
+            # Store the DN in the global persistent state array so the Sync Analyzer can cross-reference it later
+            $Global:EntraState.AlignedUsers += $Target.DistinguishedName
+            
             Write-EntraLog "[+] Aligned: $($Target.SamAccountName)" "Green"
         }
         catch {
@@ -400,10 +405,33 @@ function Invoke-SyncAnalyzer {
         $Updates = $DistinctObjects | Where-Object { $_.Group[0].OMODT -eq 'Update' }
         $Adds = $DistinctObjects | Where-Object { $_.Group[0].OMODT -eq 'Add' }
 
+        # --- State Correlation Engine ---
+        $TargetedCount = 0
+        $UnrelatedCount = 0
+        
+        if ($Global:EntraState.AlignedUsers.Count -gt 0) {
+            foreach ($Obj in $DistinctObjects) {
+                # CSExportAnalyzer often wraps the DN string in `CN={...}` format based on AD schema GUIDs rather than the raw string.
+                # However, for pure string matching, we check if the raw AD DN exists in the pipeline output.
+                if ($Global:EntraState.AlignedUsers -contains $Obj.Name) {
+                    $TargetedCount++
+                }
+                else {
+                    $UnrelatedCount++
+                }
+            }
+        }
+
         Write-Host "`n==== ANALYSIS RESULTS ====" -ForegroundColor Cyan
-        Write-Host "Total Accounts Parsed   : $($DistinctObjects.Count)"
-        Write-Host "Successful Soft-Matches : $($Updates.Count) (Updates)" -ForegroundColor Green
-        Write-Host "Failed Soft-Matches     : $($Adds.Count) (Adds)`n" -ForegroundColor Yellow
+        Write-Host "Total Accounts Pending Export : $($DistinctObjects.Count)"
+        
+        if ($Global:EntraState.AlignedUsers.Count -gt 0) {
+            Write-Host "  -> Session Targeted Matches : $TargetedCount" -ForegroundColor Green
+            Write-Host "  -> Unrelated Other Accounts : $UnrelatedCount" -ForegroundColor DarkGray
+        }
+
+        Write-Host "`nSuccessful Soft-Matches       : $($Updates.Count) (Updates)" -ForegroundColor Green
+        Write-Host "Failed Soft-Matches           : $($Adds.Count) (Adds)`n" -ForegroundColor Yellow
 
         if ($Adds.Count -gt 0) {
             Write-EntraLog "[!] Opening grid view for Failed Matches (Adds)." "Yellow"

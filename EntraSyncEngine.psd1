@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.3.7'
+    ModuleVersion        = '1.3.8'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.3.7 - Hotfix: Refactored Invoke-SyncAnalyzer parsing logic to consolidate raw attribute-level rows using Group-Object -Property DN, ensuring the summary tallies accurately reflect distinct Active Directory objects rather than individual attribute modifications.'
+            ReleaseNotes = 'v1.3.8 - Feature: Introduced the State Correlation Engine to Invoke-SyncAnalyzer. It now tracks AD accounts modified during the session and natively cross-references them against the CSExportAnalyzer payload, providing a breakdown of Targeted vs. Unrelated Pending Exports.'
 
             # Prerelease string of this module
             Prerelease   = 'beta'
