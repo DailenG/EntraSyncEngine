@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.3.11'
+    ModuleVersion        = '1.4.0'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.3.11 - UX Improvement: Renamed the menu option for managing extensions from [EXT] to [MORE] to visually distance it from the [EXIT] option.'
+            ReleaseNotes = 'v1.4.0 - Feature: Introduced the Interactive Diagnostics Menu (Quick Actions). This dedicated sub-menu provides one-touch execution of Entra Connect ADSync commands (Delta Sync, Initial Sync, Scheduler Status) without needing to navigate the legacy miisclient GUI.'
 
             # Prerelease string of this module
             Prerelease   = 'beta'

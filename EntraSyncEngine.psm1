@@ -476,6 +476,61 @@ function Invoke-SyncAnalyzer {
     Pause
 }
 
+# --- Framework Feature: Quick Actions / Diagnostics ---
+function Invoke-QuickActions {
+    $SelectedIndex = 0
+    $QuickItems = @(
+        [PSCustomObject]@{ Key = "1"; Label = "[SYNC] Trigger Delta Sync Cycle"; Action = { Write-EntraLog "[*] Executing Delta Sync..." "Cyan"; try { Start-ADSyncSyncCycle -PolicyType Delta; Write-EntraLog "[+] Delta Sync triggered successfully." "Green" } catch { Write-EntraLog "[-] Failed: $($_.Exception.Message)" "Red" }; Pause } }
+        [PSCustomObject]@{ Key = "2"; Label = "[SYNC] Trigger Initial (Full) Sync Cycle"; Action = { Write-EntraLog "[*] Executing Initial Sync..." "Cyan"; try { Start-ADSyncSyncCycle -PolicyType Initial; Write-EntraLog "[+] Initial Sync triggered successfully." "Green" } catch { Write-EntraLog "[-] Failed: $($_.Exception.Message)" "Red" }; Pause } }
+        [PSCustomObject]@{ Key = "3"; Label = "[INFO] View Scheduler Status"; Action = { Write-EntraLog "[*] Querying Scheduler..." "Cyan"; try { Get-ADSyncScheduler | Out-ConsoleGridView -Title "Entra Connect Scheduler Details" -OutputMode None } catch { Write-EntraLog "[-] Failed to get scheduler: $($_.Exception.Message)" "Red"; Pause } } }
+        [PSCustomObject]@{ Key = "Q"; Label = "[BACK] Return to Main Menu"; Action = { return } }
+    )
+
+    while ($true) {
+        Write-EntraHeader "QUICK ACTIONS (DIAGNOSTICS)"
+        Write-Host "Select an action using the Up/Down arrow keys and press Enter.`n" -ForegroundColor DarkGray
+
+        for ($i = 0; $i -lt $QuickItems.Count; $i++) {
+            if ($i -eq $SelectedIndex) {
+                Write-Host " > $($QuickItems[$i].Key).) $($QuickItems[$i].Label) " -ForegroundColor Black -BackgroundColor Cyan
+            }
+            else {
+                Write-Host "   $($QuickItems[$i].Key).) $($QuickItems[$i].Label) " -ForegroundColor White
+            }
+        }
+
+        $Key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown").Character
+        $KeyCode = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown").VirtualKeyCode
+        
+        # Up Arrow (38)
+        if ($KeyCode -eq 38) {
+            $SelectedIndex--
+            if ($SelectedIndex -lt 0) { $SelectedIndex = $QuickItems.Count - 1 }
+        }
+        # Down Arrow (40)
+        elseif ($KeyCode -eq 40) {
+            $SelectedIndex++
+            if ($SelectedIndex -ge $QuickItems.Count) { $SelectedIndex = 0 }
+        }
+        # Enter Key (13)
+        elseif ($KeyCode -eq 13) {
+            Write-Host ""
+            $QuickItems[$SelectedIndex].Action.Invoke()
+            # If Q/Back was selected, explicitly break out of the loop
+            if ($QuickItems[$SelectedIndex].Key -eq "Q") { break }
+        }
+        # Direct Number/Character Input
+        else {
+            $ValidChoice = $QuickItems | Where-Object { $_.Key -eq $Key.ToString().ToUpper() }
+            if ($ValidChoice) {
+                Write-Host ""
+                $ValidChoice.Action.Invoke()
+                if ($ValidChoice.Key -eq "Q") { break }
+            }
+        }
+    }
+}
+
 # --- Main Console Entry Point ---
 function Start-EntraSyncConsole {
     if ($PSVersionTable.PSVersion.Major -lt 7) {
@@ -496,6 +551,7 @@ function Start-EntraSyncConsole {
         [PSCustomObject]@{ Key = "4"; Label = "[VIEW]   Examine History"; Action = { if (Test-Path $EntraConfig.Manifest) { Import-Csv $EntraConfig.Manifest | Out-GridView -Title "History" } else { Write-EntraLog "No history found." "Yellow"; Pause } } }
         [PSCustomObject]@{ Key = "5"; Label = "[UNDO]   Rollback Engine"; Action = { Invoke-Rollback } }
         [PSCustomObject]@{ Key = "6"; Label = "[MORE]   Manage Extensions (SSO/Writeback)"; Action = { Invoke-ExtensionMenu } }
+        [PSCustomObject]@{ Key = "7"; Label = "[QUICK]  Entra Connect Diagnostics"; Action = { Invoke-QuickActions } }
         [PSCustomObject]@{ Key = "Q"; Label = "[EXIT]"; Action = { return } }
     )
     
