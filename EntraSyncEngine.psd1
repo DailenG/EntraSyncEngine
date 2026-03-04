@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.4.2'
+    ModuleVersion        = '1.4.3'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.4.2 - UI Enhancement: The main console header now intelligently queries and caches the Entra Connect Staging Mode status upon launch. If Staging Mode is active, a prominent blue warning banner is injected into the header. The [QUICK] menu Staging Mode diagnostic tool was also updated to forcefully refresh this global cache.'
+            ReleaseNotes = 'v1.4.3 - Hotfix: Modified all functions within the [QUICK] menu to explicitly run `Import-Module ADSync` before attempting to execute their payloads. This resolves an issue where PowerShell 7 sessions could fail to auto-load the native Entra Connect module.'
 
             # Prerelease string of this module
             # Prerelease   = ''
