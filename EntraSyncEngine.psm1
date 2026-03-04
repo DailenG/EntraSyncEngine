@@ -353,6 +353,9 @@ function Invoke-SyncAnalyzer {
         $XmlPath = Join-Path $EntraConfig.RootDir "PendingExports.xml"
         $CsvPath = Join-Path $EntraConfig.RootDir "PendingExports.csv"
 
+        # Proactively clean up any stale payloads from previous runs before extracting
+        Remove-Item $XmlPath, $CsvPath -Force -ErrorAction SilentlyContinue
+
         Write-EntraLog "[*] Extracting Staging Mode XML via csexport.exe..." "Cyan"
         # Run csexport natively, suppressing its own console noise
         & "$AADAustinDir\csexport.exe" $ConnectorName $XmlPath /f:x | Out-Null
