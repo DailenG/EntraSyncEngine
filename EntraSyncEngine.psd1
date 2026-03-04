@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.6.0'
+    ModuleVersion        = '1.6.1'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.6.0 - Feature: Added Cloud ProxyAddress Synchronization. The Invoke-ADAlignment engine now dynamically parses your pending Entra Connect M365 exports for secondary email aliases. During alignment, it injects these cloud aliases directly into the Local Active Directory object`s payload. Because Entra Connect makes AD the Source of Authority upon soft-match, this safety feature guarantees your M365 aliases are protected from erasure during the initial synchronization cycle.'
+            ReleaseNotes = 'v1.6.1 - Hotfix: Modified all `Import-Module ADSync` statements to use the `-UseWindowsPowerShell` switch. This resolves a critical `System.Web.Util.Utf16StringValidator` assembly crash occurring in PowerShell 7 due to `.NET Core`/`.NET 5+` incompatibilities with the legacy `.NET 4.0 Framework` components utilized by the Entra Connect backend.'
 
             # Prerelease string of this module
             # Prerelease   = ''
