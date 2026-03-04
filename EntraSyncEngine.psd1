@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.4.1'
+    ModuleVersion        = '1.4.2'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.4.1 - Feature/Hotfix: Added a new "Check Staging Mode Status" diagnostic tool to the [QUICK] menu for instant environment verification. Fixed a UI terminology bug in the Sync Analyzer to correctly identify Add operations as pending soft-matches during fresh setups.'
+            ReleaseNotes = 'v1.4.2 - UI Enhancement: The main console header now intelligently queries and caches the Entra Connect Staging Mode status upon launch. If Staging Mode is active, a prominent blue warning banner is injected into the header. The [QUICK] menu Staging Mode diagnostic tool was also updated to forcefully refresh this global cache.'
 
             # Prerelease string of this module
             Prerelease   = 'beta'
