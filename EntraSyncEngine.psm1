@@ -267,8 +267,9 @@ function Invoke-ADAlignment {
             Set-ADUser -Identity $Target.DistinguishedName -UserPrincipalName $UPN -EmailAddress $UPN -Replace @{ proxyAddresses = $Proxies } -ErrorAction Stop
             $Log | Export-Csv $EntraConfig.Manifest -Append -NoTypeInformation
             
-            # Store the DN in the global persistent state array so the Sync Analyzer can cross-reference it later
-            $Global:EntraState.AlignedUsers += $Target.DistinguishedName
+            # Store the UPN in the global persistent state array so the Sync Analyzer can cross-reference it later 
+            # (We cannot use DN because CSExportAnalyzer obfuscates them into CN={GUID})
+            $Global:EntraState.AlignedUsers += $UPN
             
             Write-EntraLog "[+] Aligned: $($Target.SamAccountName)" "Green"
         }
@@ -409,15 +410,29 @@ function Invoke-SyncAnalyzer {
         $TargetedCount = 0
         $UnrelatedCount = 0
         
-        if ($Global:EntraState.AlignedUsers.Count -gt 0) {
-            foreach ($Obj in $DistinctObjects) {
-                # CSExportAnalyzer often wraps the DN string in `CN={...}` format based on AD schema GUIDs rather than the raw string.
-                # However, for pure string matching, we check if the raw AD DN exists in the pipeline output.
-                if ($Global:EntraState.AlignedUsers -contains $Obj.Name) {
+        # We process the CSV to extract the readable UPN for the grid view, bypassing the ILM CN={GUID} obfuscation
+        $ProcessedAdds = @()
+        
+        foreach ($Obj in $DistinctObjects) {
+            # Extract the actual User Principal Name from the raw CSExportAnalyzer attribute rows
+            $UpnRow = $Obj.Group | Where-Object { $_.AttrName -eq 'userPrincipalName' }
+            $ParsedUPN = if ($UpnRow) { $UpnRow.NewValue } else { "Unknown ($($Obj.Name))" }
+            
+            if ($Global:EntraState.AlignedUsers.Count -gt 0) {
+                # Cross-reference the parsed UPN against our session memory bank
+                if ($Global:EntraState.AlignedUsers -contains $ParsedUPN) {
                     $TargetedCount++
                 }
                 else {
                     $UnrelatedCount++
+                }
+            }
+            
+            if ($Obj.Group[0].OMODT -eq 'Add') {
+                $ProcessedAdds += [PSCustomObject]@{
+                    OMODT   = 'Add'
+                    Account = $ParsedUPN
+                    ILM_ID  = $Obj.Name
                 }
             }
         }
@@ -436,13 +451,7 @@ function Invoke-SyncAnalyzer {
         if ($Adds.Count -gt 0) {
             Write-EntraLog "[!] Opening grid view for Failed Matches (Adds)." "Yellow"
             
-            # Reconstruct a cleaner object for the grid view using the first occurrence of the grouped 'Add' object
-            $Adds | ForEach-Object {
-                [PSCustomObject]@{
-                    OMODT = $_.Group[0].OMODT
-                    DN    = $_.Name
-                }
-            } | Out-ConsoleGridView -Title "FAILED SOFT-MATCHES (Pending Cloud Duplicates)" -OutputMode None
+            $ProcessedAdds | Out-ConsoleGridView -Title "FAILED SOFT-MATCHES (Pending Cloud Duplicates)" -OutputMode None
         }
         else {
             Write-EntraLog "[+] Flawless execution! No 'Add' operations detected. All accounts soft-matched successfully!" "Green"
