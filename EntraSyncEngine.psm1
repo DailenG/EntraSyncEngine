@@ -363,8 +363,8 @@ function Invoke-SyncAnalyzer {
         }
 
         Write-EntraLog "[*] Converting XML to CSV via CSExportAnalyzer... " "Cyan"
-        # Since CSExportAnalyzer native output is standard console text, we pipe it back directly using PowerShell
-        & "$AADAustinDir\CSExportAnalyzer.exe" "$XmlPath" > "$CsvPath"
+        # Use explicit Out-File with ASCII encoding to prevent PS 5.1 from defaulting to UTF-16 LE, which breaks Import-Csv
+        & "$AADAustinDir\CSExportAnalyzer.exe" "$XmlPath" | Out-File -FilePath "$CsvPath" -Encoding ASCII -Force
 
         Remove-Item $XmlPath -Force -ErrorAction SilentlyContinue
     }

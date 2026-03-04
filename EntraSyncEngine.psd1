@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.3.4'
+    ModuleVersion        = '1.3.5'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.3.4 - Hotfix: Migrated CSExportAnalyzer logging execution from cmd.exe string interpolation to native PowerShell explicit file piping to resolve missing CSV generation on Entra servers.'
+            ReleaseNotes = 'v1.3.5 - Hotfix: Forced CSExportAnalyzer piped output to explicitly encode in ASCII rather than relying on PowerShell 5.1 native redirect fallback to UTF-16 LE, which breaks Import-Csv downstream parsing.'
 
             # Prerelease string of this module
             Prerelease   = 'beta'
