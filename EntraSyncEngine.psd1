@@ -12,7 +12,7 @@
     RootModule           = 'EntraSyncEngine.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.4.0'
+    ModuleVersion        = '1.4.1'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -119,7 +119,7 @@ Interactive documentation: https://deepwiki.com/DailenG/EntraSyncEngine
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'v1.4.0 - Feature: Introduced the Interactive Diagnostics Menu (Quick Actions). This dedicated sub-menu provides one-touch execution of Entra Connect ADSync commands (Delta Sync, Initial Sync, Scheduler Status) without needing to navigate the legacy miisclient GUI.'
+            ReleaseNotes = 'v1.4.1 - Feature/Hotfix: Added a new "Check Staging Mode Status" diagnostic tool to the [QUICK] menu for instant environment verification. Fixed a UI terminology bug in the Sync Analyzer to correctly identify Add operations as pending soft-matches during fresh setups.'
 
             # Prerelease string of this module
             Prerelease   = 'beta'
