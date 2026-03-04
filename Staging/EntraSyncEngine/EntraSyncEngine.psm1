@@ -363,8 +363,8 @@ function Invoke-SyncAnalyzer {
         }
 
         Write-EntraLog "[*] Converting XML to CSV via CSExportAnalyzer... " "Cyan"
-        # Since CSExportAnalyzer native output is standard console text, we pipe it back directly using PowerShell
-        & "$AADAustinDir\CSExportAnalyzer.exe" "$XmlPath" > "$CsvPath"
+        # cmd.exe bridging is required here because CSExportAnalyzer exclusively writes to standard output via > redirection
+        cmd.exe /c "`"$AADAustinDir\CSExportAnalyzer.exe`" `"$XmlPath`" > `"$CsvPath`""
 
         Remove-Item $XmlPath -Force -ErrorAction SilentlyContinue
     }
