@@ -393,17 +393,28 @@ function Invoke-SyncAnalyzer {
         # Filter out the 'Summary:' footer row that CSExportAnalyzer injects at the bottom
         $ValidData = $Data | Where-Object { -not [string]::IsNullOrWhiteSpace($_.DN) -and $_.ObjectType -ne 'Summary:' }
 
-        $Updates = $ValidData | Where-Object { $_.OMODT -eq 'Update' }
-        $Adds = $ValidData | Where-Object { $_.OMODT -eq 'Add' }
+        # Group by the distinct DN because CSExportAnalyzer outputs one row per attribute modification. 
+        # A new user will have dozens of 'Add' rows, but we only want to count them as 1 failed sync object.
+        $DistinctObjects = $ValidData | Group-Object -Property DN
+
+        $Updates = $DistinctObjects | Where-Object { $_.Group[0].OMODT -eq 'Update' }
+        $Adds = $DistinctObjects | Where-Object { $_.Group[0].OMODT -eq 'Add' }
 
         Write-Host "`n==== ANALYSIS RESULTS ====" -ForegroundColor Cyan
-        Write-Host "Total Operations Parsed : $($ValidData.Count)"
+        Write-Host "Total Accounts Parsed   : $($DistinctObjects.Count)"
         Write-Host "Successful Soft-Matches : $($Updates.Count) (Updates)" -ForegroundColor Green
         Write-Host "Failed Soft-Matches     : $($Adds.Count) (Adds)`n" -ForegroundColor Yellow
 
         if ($Adds.Count -gt 0) {
             Write-EntraLog "[!] Opening grid view for Failed Matches (Adds)." "Yellow"
-            $Adds | Select-Object OMODT, DN | Out-ConsoleGridView -Title "FAILED SOFT-MATCHES (Pending Cloud Duplicates)" -OutputMode None
+            
+            # Reconstruct a cleaner object for the grid view using the first occurrence of the grouped 'Add' object
+            $Adds | ForEach-Object {
+                [PSCustomObject]@{
+                    OMODT = $_.Group[0].OMODT
+                    DN    = $_.Name
+                }
+            } | Out-ConsoleGridView -Title "FAILED SOFT-MATCHES (Pending Cloud Duplicates)" -OutputMode None
         }
         else {
             Write-EntraLog "[+] Flawless execution! No 'Add' operations detected. All accounts soft-matched successfully!" "Green"
