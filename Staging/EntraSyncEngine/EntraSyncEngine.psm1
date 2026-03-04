@@ -431,7 +431,7 @@ function Invoke-SyncAnalyzer {
             }
             
             $OMODT = $Obj.Group[0].OMODT
-            $Status = if ($OMODT -eq 'Update') { "Update (Already Linked)" } elseif ($OMODT -eq 'Add') { "Add (Pending Provision/Soft-Match)" } else { $OMODT }
+            $Status = if ($OMODT -eq 'Update') { "Success (Soft-Match)" } elseif ($OMODT -eq 'Add') { "Failed (Duplicate)" } else { $OMODT }
             
             $OutputTable += [PSCustomObject]@{
                 Account  = $ParsedUPN
@@ -449,8 +449,12 @@ function Invoke-SyncAnalyzer {
             Write-Host "  -> Unrelated Other Accounts : $UnrelatedCount" -ForegroundColor DarkGray
         }
 
-        Write-Host "`nAlready Linked (Updates)        : $($Updates.Count)" -ForegroundColor Green
-        Write-Host "Pending Soft-Matches (Adds)     : $($Adds.Count)`n" -ForegroundColor Yellow
+        Write-Host "`nSuccessful Soft-Matches       : $($Updates.Count) (Updates)" -ForegroundColor Green
+        Write-Host "Failed Soft-Matches           : $($Adds.Count) (Adds)`n" -ForegroundColor Yellow
+
+        if ($Adds.Count -eq 0) {
+            Write-EntraLog "[+] Flawless execution! No 'Add' operations detected. All accounts soft-matched successfully!`n" "Green"
+        }
 
         if ($OutputTable.Count -gt 0) {
             $Prompt = Read-Host "[?] View detailed table breakdown? (Type 'Y' or press Enter to continue)"
